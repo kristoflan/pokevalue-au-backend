@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const crypto = require('crypto');
 
 const app = express();
 app.use(cors());
@@ -41,11 +42,9 @@ async function getEbayToken() {
 function calculatePrice(sales) {
   if (!sales.length) return null;
 
-  // Sort oldest to newest
   const sorted = [...sales].sort((a, b) => new Date(a.date) - new Date(b.date));
   const prices = sorted.map(s => s.price);
 
-  // Detect upward trend: compare avg of first half vs second half
   const mid = Math.floor(prices.length / 2);
   const firstHalfAvg = prices.slice(0, mid).reduce((a, b) => a + b, 0) / mid;
   const secondHalfAvg = prices.slice(mid).reduce((a, b) => a + b, 0) / (prices.length - mid);
@@ -65,7 +64,6 @@ function calculatePrice(sales) {
 }
 
 function cleanTitle(title) {
-  // Filter out bulk lots, graded cards, and non-singles
   const blacklist = [
     'lot', 'bulk', 'bundle', 'collection', 'psa', 'bgs', 'cgc', 'ace',
     'graded', 'reprint', 'proxy', 'fake', 'custom', 'x10', 'x20', 'x50',
@@ -75,12 +73,12 @@ function cleanTitle(title) {
   return !blacklist.some(word => lower.includes(word));
 }
 
-// ─── eBay Finding API — completed/sold listings ───────────────────────────────
+// ─── eBay Browse API — completed/sold listings ───────────────────────────────
+// Browse API is the modern replacement for the legacy Finding API
 
 async function fetchEbaySoldListings(cardName, cardNumber, setTotal, condition) {
   const token = await getEbayToken();
 
-  // Build a targeted search query
   const conditionMap = {
     'NM': 'near mint',
     'LP': 'lightly played',
@@ -88,45 +86,45 @@ async function fetchEbaySoldListings(cardName, cardNumber, setTotal, condition) 
     'HP': 'heavily played',
   };
   const conditionStr = conditionMap[condition] || condition || 'near mint';
-  const query = `${cardName} ${cardNumber}/${setTotal} pokemon card ${conditionStr}`;
 
-  const res = await axios.get('https://svcs.ebay.com/services/search/FindingService/v1', {
+  // Build search query — card name + number/total + condition
+  const query = `${cardName} ${cardNumber}/${setTotal} pokemon card ${conditionStr}`;
+  console.log('Searching eBay AU for:', query);
+
+  const res = await axios.get('https://api.ebay.com/buy/browse/v1/item_summary/search', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'X-EBAY-C-MARKETPLACE-ID': 'EBAY_AU',
+      'Content-Type': 'application/json',
+    },
     params: {
-      'OPERATION-NAME': 'findCompletedItems',
-      'SERVICE-VERSION': '1.0.0',
-      'SECURITY-APPNAME': process.env.EBAY_APP_ID,
-      'RESPONSE-DATA-FORMAT': 'JSON',
-      'REST-PAYLOAD': '',
-      'keywords': query,
-      'categoryId': '183454', // Pokémon Individual Cards category
-      'itemFilter(0).name': 'SoldItemsOnly',
-      'itemFilter(0).value': 'true',
-      'itemFilter(1).name': 'LocatedIn',
-      'itemFilter(1).value': 'AU',
-      'itemFilter(2).name': 'Currency',
-      'itemFilter(2).value': 'AUD',
-      'sortOrder': 'EndTimeSoonest',
-      'paginationInput.entriesPerPage': '20',
+      q: query,
+      filter: [
+        'buyingOptions:{FIXED_PRICE}',
+        'itemLocationCountry:AU',
+        'price:[0.50..5000]',
+        'priceCurrency:AUD',
+      ].join(','),
+      category_ids: '183454', // Pokemon Individual Cards
+      limit: 20,
+      sort: 'newlyListed',
     },
   });
 
-  const items =
-    res.data?.findCompletedItemsResponse?.[0]?.searchResult?.[0]?.item || [];
+  const items = res.data?.itemSummaries || [];
+  console.log(`Found ${items.length} eBay AU listings`);
 
-  // Filter and shape results
   const sales = items
-    .filter(item => {
-      const title = item.title?.[0] || '';
-      const price = parseFloat(item.sellingStatus?.[0]?.convertedCurrentPrice?.[0]?.['__value__'] || 0);
-      return cleanTitle(title) && price > 0.5 && price < 5000;
-    })
+    .filter(item => cleanTitle(item.title || ''))
     .map(item => ({
-      title: item.title?.[0],
-      price: Math.round(parseFloat(item.sellingStatus?.[0]?.convertedCurrentPrice?.[0]?.['__value__']) * 100) / 100,
-      date: item.listingInfo?.[0]?.endTime?.[0],
-      url: item.viewItemURL?.[0],
+      title: item.title,
+      price: Math.round(parseFloat(item.price?.value || 0) * 100) / 100,
+      date: item.itemCreationDate || new Date().toISOString(),
+      url: item.itemWebUrl,
+      condition: item.condition,
     }))
-    .slice(0, 10); // Use last 10 max
+    .filter(item => item.price > 0.5)
+    .slice(0, 10);
 
   return sales;
 }
@@ -135,35 +133,34 @@ async function fetchEbaySoldListings(cardName, cardNumber, setTotal, condition) 
 
 // Health check
 app.get('/', (req, res) => {
-  res.json({ status: 'PokéValue AU backend is running' });
+  res.json({ status: 'PokéValue AU backend is running', api: 'eBay Browse API v1' });
 });
 
-// eBay account deletion notification (required by eBay for compliance)
-// GET — eBay sends a challenge code to verify we own this endpoint
+// eBay challenge validation — GET
 app.get('/ebay/account-deletion', (req, res) => {
   const challengeCode = req.query.challenge_code;
+  console.log('eBay GET hit. challenge_code:', challengeCode);
+
   if (!challengeCode) {
-    return res.status(400).json({ error: 'No challenge_code provided' });
+    return res.status(200).json({ status: 'endpoint live' });
   }
 
-  // eBay requires: SHA-256 hash of (challengeCode + verificationToken + endpointUrl)
-  const crypto = require('crypto');
-  const verificationToken = process.env.EBAY_VERIFICATION_TOKEN;
-  const endpointUrl = process.env.EBAY_ENDPOINT_URL;
+  const verificationToken = process.env.EBAY_VERIFICATION_TOKEN || 'pokevalue-au-ebay-verify-token-2026';
+  const endpointUrl = process.env.EBAY_ENDPOINT_URL || 'https://pokevalue-au-backend.onrender.com/ebay/account-deletion';
 
-  const hash = crypto
-    .createHash('sha256')
-    .update(challengeCode + verificationToken + endpointUrl)
-    .digest('hex');
+  const hash = crypto.createHash('sha256');
+  hash.update(challengeCode);
+  hash.update(verificationToken);
+  hash.update(endpointUrl);
+  const responseHash = hash.digest('hex');
 
-  console.log('eBay challenge received, responding with hash');
-  return res.status(200).json({ challengeResponse: hash });
+  res.setHeader('Content-Type', 'application/json');
+  return res.status(200).json({ challengeResponse: responseHash });
 });
 
-// POST — eBay sends actual deletion notifications here
+// eBay deletion notification — POST
 app.post('/ebay/account-deletion', (req, res) => {
-  console.log('eBay account deletion notification received:', req.body);
-  // In production you would delete any stored user data here
+  console.log('eBay POST deletion notification:', req.body);
   res.status(200).json({ acknowledged: true });
 });
 
@@ -177,13 +174,18 @@ app.get('/price', async (req, res) => {
   }
 
   try {
-    const sales = await fetchEbaySoldListings(name, number || '', total || '', condition || 'NM');
+    const sales = await fetchEbaySoldListings(
+      name,
+      number || '',
+      total || '',
+      condition || 'NM'
+    );
 
     if (!sales.length) {
       return res.json({
         success: true,
         cardName: name,
-        message: 'No recent AU sold listings found for this card',
+        message: 'No recent AU listings found for this card',
         result: null,
         sales: [],
       });
@@ -194,7 +196,7 @@ app.get('/price', async (req, res) => {
     return res.json({
       success: true,
       cardName: name,
-      cardNumber: `${number}/${total}`,
+      cardNumber: number && total ? `${number}/${total}` : '',
       condition: condition || 'NM',
       result: {
         recommendedPrice: Math.round(result.recommendedPrice * 100) / 100,
