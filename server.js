@@ -139,8 +139,31 @@ app.get('/', (req, res) => {
 });
 
 // eBay account deletion notification (required by eBay for compliance)
+// GET — eBay sends a challenge code to verify we own this endpoint
+app.get('/ebay/account-deletion', (req, res) => {
+  const challengeCode = req.query.challenge_code;
+  if (!challengeCode) {
+    return res.status(400).json({ error: 'No challenge_code provided' });
+  }
+
+  // eBay requires: SHA-256 hash of (challengeCode + verificationToken + endpointUrl)
+  const crypto = require('crypto');
+  const verificationToken = process.env.EBAY_VERIFICATION_TOKEN;
+  const endpointUrl = process.env.EBAY_ENDPOINT_URL;
+
+  const hash = crypto
+    .createHash('sha256')
+    .update(challengeCode + verificationToken + endpointUrl)
+    .digest('hex');
+
+  console.log('eBay challenge received, responding with hash');
+  return res.status(200).json({ challengeResponse: hash });
+});
+
+// POST — eBay sends actual deletion notifications here
 app.post('/ebay/account-deletion', (req, res) => {
   console.log('eBay account deletion notification received:', req.body);
+  // In production you would delete any stored user data here
   res.status(200).json({ acknowledged: true });
 });
 
