@@ -37,46 +37,94 @@ async function getEbayToken() {
   return cachedToken;
 }
 
-// ─── Pricing logic ───────────────────────────────────────────────────────────
+// ─── Filtering helpers ────────────────────────────────────────────────────────
+
+// Keywords that indicate a graded card (should be priced separately)
+const GRADED_KEYWORDS = ['psa', 'bgs', 'cgc', 'ace', 'sgc', 'graded', 'grade'];
+
+// Keywords that indicate junk listings we don't want
+const JUNK_KEYWORDS = [
+  'lot', 'bulk', 'bundle', 'collection', 'reprint', 'proxy',
+  'fake', 'custom', 'x10', 'x20', 'x50', '10x', '20x', '50x',
+  'damaged', 'playmat', 'binder', 'sleeve', 'display', 'booster'
+];
+
+function isGraded(title) {
+  const lower = title.toLowerCase();
+  return GRADED_KEYWORDS.some(k => lower.includes(k));
+}
+
+function isJunk(title) {
+  const lower = title.toLowerCase();
+  return JUNK_KEYWORDS.some(k => lower.includes(k));
+}
+
+// ─── Outlier removal using IQR method ────────────────────────────────────────
+// Removes prices that are statistically too high or too low
+// This is the same method used by financial pricing tools
+
+function removeOutliers(prices) {
+  if (prices.length < 4) return prices; // Not enough data to remove outliers
+
+  const sorted = [...prices].sort((a, b) => a - b);
+  const q1 = sorted[Math.floor(sorted.length * 0.25)];
+  const q3 = sorted[Math.floor(sorted.length * 0.75)];
+  const iqr = q3 - q1;
+
+  const lower = q1 - 1.5 * iqr;
+  const upper = q3 + 1.5 * iqr;
+
+  const filtered = prices.filter(p => p >= lower && p <= upper);
+
+  // Always keep at least 3 prices even if they're outliers
+  return filtered.length >= 3 ? filtered : prices.slice(0, 3);
+}
+
+// ─── Smart pricing logic ──────────────────────────────────────────────────────
 
 function calculatePrice(sales) {
   if (!sales.length) return null;
 
+  // Sort oldest to newest by date
   const sorted = [...sales].sort((a, b) => new Date(a.date) - new Date(b.date));
-  const prices = sorted.map(s => s.price);
+  const rawPrices = sorted.map(s => s.price);
 
-  const mid = Math.floor(prices.length / 2);
-  const firstHalfAvg = prices.slice(0, mid).reduce((a, b) => a + b, 0) / mid;
-  const secondHalfAvg = prices.slice(mid).reduce((a, b) => a + b, 0) / (prices.length - mid);
-  const isTrending = secondHalfAvg / firstHalfAvg > 1.08;
+  // Remove statistical outliers
+  const cleanPrices = removeOutliers(rawPrices);
+  console.log(`Prices before outlier removal: ${rawPrices}`);
+  console.log(`Prices after outlier removal: ${cleanPrices}`);
 
-  const average = prices.reduce((a, b) => a + b, 0) / prices.length;
-  const latest = prices[prices.length - 1];
+  // Detect upward trend — compare avg of first half vs second half
+  // Only flag as trending if we have at least 4 sales to compare
+  let isTrending = false;
+  if (cleanPrices.length >= 4) {
+    const mid = Math.floor(cleanPrices.length / 2);
+    const firstHalfAvg = cleanPrices.slice(0, mid).reduce((a, b) => a + b, 0) / mid;
+    const secondHalfAvg = cleanPrices.slice(mid).reduce((a, b) => a + b, 0) / (cleanPrices.length - mid);
+    isTrending = secondHalfAvg / firstHalfAvg > 1.08; // 8% upward movement = trending
+  }
+
+  const average = cleanPrices.reduce((a, b) => a + b, 0) / cleanPrices.length;
+  const latest = cleanPrices[cleanPrices.length - 1];
+  const lowest = Math.min(...cleanPrices);
+  const highest = Math.max(...cleanPrices);
 
   return {
     recommendedPrice: isTrending ? latest : average,
     average: Math.round(average * 100) / 100,
     latest: Math.round(latest * 100) / 100,
+    lowest: Math.round(lowest * 100) / 100,
+    highest: Math.round(highest * 100) / 100,
     isTrending,
-    salesUsed: prices.length,
+    salesUsed: cleanPrices.length,
+    outliersRemoved: rawPrices.length - cleanPrices.length,
     sales: sorted,
   };
 }
 
-function cleanTitle(title) {
-  const blacklist = [
-    'lot', 'bulk', 'bundle', 'collection', 'psa', 'bgs', 'cgc', 'ace',
-    'graded', 'reprint', 'proxy', 'fake', 'custom', 'x10', 'x20', 'x50',
-    '10x', '20x', '50x', 'damaged', 'heavily played'
-  ];
-  const lower = title.toLowerCase();
-  return !blacklist.some(word => lower.includes(word));
-}
+// ─── eBay Browse API ──────────────────────────────────────────────────────────
 
-// ─── eBay Browse API — completed/sold listings ───────────────────────────────
-// Browse API is the modern replacement for the legacy Finding API
-
-async function fetchEbaySoldListings(cardName, cardNumber, setTotal, condition) {
+async function fetchEbayListings(cardName, cardNumber, setTotal, condition) {
   const token = await getEbayToken();
 
   const conditionMap = {
@@ -86,8 +134,6 @@ async function fetchEbaySoldListings(cardName, cardNumber, setTotal, condition) 
     'HP': 'heavily played',
   };
   const conditionStr = conditionMap[condition] || condition || 'near mint';
-
-  // Build search query — card name + number/total + condition
   const query = `${cardName} ${cardNumber}/${setTotal} pokemon card ${conditionStr}`;
   console.log('Searching eBay AU for:', query);
 
@@ -105,35 +151,53 @@ async function fetchEbaySoldListings(cardName, cardNumber, setTotal, condition) 
         'price:[0.50..5000]',
         'priceCurrency:AUD',
       ].join(','),
-      category_ids: '183454', // Pokemon Individual Cards
-      limit: 20,
+      category_ids: '183454',
+      limit: 30, // Fetch more so we have enough after filtering
       sort: 'newlyListed',
     },
   });
 
   const items = res.data?.itemSummaries || [];
-  console.log(`Found ${items.length} eBay AU listings`);
+  console.log(`Raw eBay results: ${items.length}`);
 
-  const sales = items
-    .filter(item => cleanTitle(item.title || ''))
-    .map(item => ({
-      title: item.title,
-      price: Math.round(parseFloat(item.price?.value || 0) * 100) / 100,
+  // Separate into ungraded and graded
+  const ungraded = [];
+  const graded = [];
+
+  items.forEach(item => {
+    const title = item.title || '';
+    const price = Math.round(parseFloat(item.price?.value || 0) * 100) / 100;
+
+    if (price < 0.50 || price > 10000) return; // Skip impossible prices
+    if (isJunk(title)) return; // Skip bulk lots etc.
+
+    const sale = {
+      title,
+      price,
       date: item.itemCreationDate || new Date().toISOString(),
       url: item.itemWebUrl,
       condition: item.condition,
-    }))
-    .filter(item => item.price > 0.5)
-    .slice(0, 10);
+    };
 
-  return sales;
+    if (isGraded(title)) {
+      graded.push(sale);
+    } else {
+      ungraded.push(sale);
+    }
+  });
+
+  console.log(`After filtering — Ungraded: ${ungraded.length}, Graded: ${graded.length}`);
+
+  return {
+    ungraded: ungraded.slice(0, 10),
+    graded: graded.slice(0, 10),
+  };
 }
 
 // ─── Routes ──────────────────────────────────────────────────────────────────
 
-// Health check
 app.get('/', (req, res) => {
-  res.json({ status: 'PokéValue AU backend is running', api: 'eBay Browse API v1' });
+  res.json({ status: 'PokéValue AU backend is running', version: '1.1.0' });
 });
 
 // eBay challenge validation — GET
@@ -174,40 +238,55 @@ app.get('/price', async (req, res) => {
   }
 
   try {
-    const sales = await fetchEbaySoldListings(
+    const { ungraded, graded } = await fetchEbayListings(
       name,
       number || '',
       total || '',
       condition || 'NM'
     );
 
-    if (!sales.length) {
+    // Calculate pricing for ungraded
+    const ungradedResult = calculatePrice(ungraded);
+
+    // Calculate pricing for graded (bonus data)
+    const gradedResult = calculatePrice(graded);
+
+    if (!ungradedResult && !gradedResult) {
       return res.json({
         success: true,
         cardName: name,
         message: 'No recent AU listings found for this card',
-        result: null,
+        ungraded: null,
+        graded: null,
         sales: [],
       });
     }
-
-    const result = calculatePrice(sales);
 
     return res.json({
       success: true,
       cardName: name,
       cardNumber: number && total ? `${number}/${total}` : '',
       condition: condition || 'NM',
-      result: {
-        recommendedPrice: Math.round(result.recommendedPrice * 100) / 100,
-        average: result.average,
-        latest: result.latest,
-        isTrending: result.isTrending,
-        salesUsed: result.salesUsed,
-        pricingMethod: result.isTrending ? 'latest_sale_trending' : 'average',
-      },
-      sales: result.sales,
+      ungraded: ungradedResult ? {
+        recommendedPrice: Math.round(ungradedResult.recommendedPrice * 100) / 100,
+        average: ungradedResult.average,
+        latest: ungradedResult.latest,
+        lowest: ungradedResult.lowest,
+        highest: ungradedResult.highest,
+        isTrending: ungradedResult.isTrending,
+        salesUsed: ungradedResult.salesUsed,
+        outliersRemoved: ungradedResult.outliersRemoved,
+        pricingMethod: ungradedResult.isTrending ? 'latest_sale_trending' : 'average',
+        sales: ungradedResult.sales,
+      } : null,
+      graded: gradedResult ? {
+        recommendedPrice: Math.round(gradedResult.recommendedPrice * 100) / 100,
+        average: gradedResult.average,
+        salesUsed: gradedResult.salesUsed,
+        sales: gradedResult.sales,
+      } : null,
     });
+
   } catch (err) {
     console.error('eBay API error:', err?.response?.data || err.message);
     return res.status(500).json({
