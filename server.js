@@ -139,47 +139,37 @@ function calculatePrice(sales) {
 
 // ─── eBay Browse API ──────────────────────────────────────────────────────────
 
-async function fetchEbayListings(cardName, cardNumber, setTotal, condition) {
-  const token = await getEbayToken();
-
-  // ── Smart query building ─────────────────────────────────────────────────
-  // Secret rares have a card number HIGHER than the set total (e.g. 136/131).
-  // Sellers almost never include this number in listings, so including it
-  // in the search query kills results. We detect this and omit the number.
-  // Condition is also removed from keywords — it filters too aggressively
-  // since sellers write "NM", "Near Mint", "Mint" etc. inconsistently.
-  // We use eBay's built-in condition filter instead.
-
+// Build the base eBay search query for a card
+function buildQuery(cardName, cardNumber, setTotal) {
   const numInt   = parseInt(cardNumber, 10);
   const totalInt = parseInt(setTotal,   10);
   const isSecretRare   = cardNumber && setTotal && !isNaN(numInt) && !isNaN(totalInt) && numInt > totalInt;
   const hasValidNumber = cardNumber && setTotal && !isNaN(numInt) && !isNaN(totalInt) && numInt <= totalInt;
 
-  // ── Build the search query ───────────────────────────────────────────────
-  // Rule: ALWAYS include the card number in the eBay search for precision.
-  // For secret rares (number > total), include JUST the number (e.g. "161")
-  // because sellers write "Umbreon 161" but rarely write "161/131".
-  // For normal cards, include "number/total" (e.g. "4/102") as sellers
-  // consistently write this format for base/standard cards.
-
-  let primaryQuery;
   if (isSecretRare) {
-    // Secret rare: use number only (no /total) — e.g. "Umbreon 161 pokemon card"
-    primaryQuery = `${cardName} ${cardNumber} pokemon card`;
-    console.log(`Secret rare detected (${cardNumber}/${setTotal}) — using number only: ${primaryQuery}`);
+    // Secret rare: number only without /total (e.g. "Umbreon 161 pokemon card")
+    return { query: `${cardName} ${cardNumber} pokemon card`, isSecretRare, hasValidNumber };
   } else if (hasValidNumber) {
-    // Normal card: use full number/total — e.g. "Charizard 4/102 pokemon card"
-    primaryQuery = `${cardName} ${cardNumber}/${setTotal} pokemon card`;
-  } else {
-    // No number info at all — name only
-    primaryQuery = `${cardName} pokemon card`;
+    // Normal card: full number/total (e.g. "Charizard 4/102 pokemon card")
+    return { query: `${cardName} ${cardNumber}/${setTotal} pokemon card`, isSecretRare, hasValidNumber };
   }
+  return { query: `${cardName} pokemon card`, isSecretRare: false, hasValidNumber: false };
+}
 
+// Mint keyword indicators in listing titles
+const MINT_KEYWORDS   = ['gem mint', 'gem-mint', 'psa 10', 'perfect', ' mint ', 'mint/nm', 'nm/mint'];
+const NM_KEYWORDS     = ['near mint', 'near-mint', 'nm/m', 'nm-m', ' nm ', 'excellent', 'lightly played', 'lp'];
+
+function detectConditionFromTitle(title) {
+  const lower = title.toLowerCase();
+  if (MINT_KEYWORDS.some(k => lower.includes(k))) return 'mint';
+  if (NM_KEYWORDS.some(k => lower.includes(k)))   return 'nm';
+  return 'unknown'; // No condition keyword — could be either
+}
+
+async function fetchEbayListings(cardName, cardNumber, setTotal, token) {
+  const { query: primaryQuery, isSecretRare, hasValidNumber } = buildQuery(cardName, cardNumber, setTotal);
   console.log('Primary eBay AU query:', primaryQuery);
-
-  // eBay condition IDs: 1000=New, 2750=Like New, 3000=Very Good, 4000=Good
-  // Casting a wider net here — our title filtering cleans up the rest
-  const conditionFilter = 'conditionIds:{1000|2750|3000|4000}';
 
   const fetchQuery = async (q) => {
     const res = await axios.get('https://api.ebay.com/buy/browse/v1/item_summary/search', {
@@ -195,7 +185,8 @@ async function fetchEbayListings(cardName, cardNumber, setTotal, condition) {
           'itemLocationCountry:AU',
           'price:[0.50..10000]',
           'priceCurrency:AUD',
-          conditionFilter,
+          // Conditions: 1000=New, 2750=Like New, 3000=Very Good, 4000=Good
+          'conditionIds:{1000|2750|3000|4000}',
         ].join(','),
         category_ids: '183454',
         limit: 50,
@@ -208,19 +199,20 @@ async function fetchEbayListings(cardName, cardNumber, setTotal, condition) {
   let items = await fetchQuery(primaryQuery);
   console.log(`Primary query results: ${items.length}`);
 
-  // ── Fallback: if too few results, broaden to name-only ───────────────────
+  // Fallback: broaden to name-only if too few results
   if (items.length < 5 && hasValidNumber) {
     console.log('Too few results — trying broader name-only query');
     const broadItems = await fetchQuery(`${cardName} pokemon card`);
-    console.log(`Broad query results: ${broadItems.length}`);
     const seen = new Set(items.map(i => i.itemId));
     broadItems.forEach(i => { if (!seen.has(i.itemId)) items.push(i); });
     console.log(`Total after merge: ${items.length}`);
   }
 
-  // ── Filter and separate ───────────────────────────────────────────────────
-  const ungraded = [];
-  const graded   = [];
+  // ── Filter and bucket into mint / nm / graded ────────────────────────────
+  const mint    = [];
+  const nm      = [];
+  const unknown = [];
+  const graded  = [];
 
   items.forEach(item => {
     const title = item.title || '';
@@ -228,8 +220,6 @@ async function fetchEbayListings(cardName, cardNumber, setTotal, condition) {
 
     if (price < 0.50 || price > 10000) return;
     if (isJunk(title)) return;
-
-    // For secret rares, verify the card name appears in the listing title
     if (isSecretRare) {
       const firstWord = cardName.split(' ')[0].toLowerCase();
       if (!title.toLowerCase().includes(firstWord)) return;
@@ -246,15 +236,24 @@ async function fetchEbayListings(cardName, cardNumber, setTotal, condition) {
     if (isGraded(title)) {
       graded.push(sale);
     } else {
-      ungraded.push(sale);
+      const cond = detectConditionFromTitle(title);
+      if (cond === 'mint')    mint.push(sale);
+      else if (cond === 'nm') nm.push(sale);
+      else                    unknown.push(sale);
     }
   });
 
-  console.log(`After filtering — Ungraded: ${ungraded.length}, Graded: ${graded.length}`);
+  // If we don't have enough condition-specific data, fold unknowns into NM
+  // (NM is the most common condition for unspecified listings)
+  const nmFinal   = [...nm,   ...unknown].slice(0, 10);
+  const mintFinal = mint.slice(0, 10);
+
+  console.log(`After filtering — Mint: ${mintFinal.length}, NM: ${nmFinal.length}, Graded: ${graded.length}`);
 
   return {
-    ungraded: ungraded.slice(0, 10),
-    graded:   graded.slice(0, 10),
+    mint:    mintFinal,
+    nm:      nmFinal,
+    graded:  graded.slice(0, 10),
   };
 }
 
@@ -302,52 +301,46 @@ app.get('/price', async (req, res) => {
   }
 
   try {
-    const { ungraded, graded } = await fetchEbayListings(
-      name,
-      number || '',
-      total || '',
-      condition || 'NM'
-    );
+    const token = await getEbayToken();
+    const { mint, nm, graded } = await fetchEbayListings(name, number || '', total || '', token);
 
-    // Calculate pricing for ungraded
-    const ungradedResult = calculatePrice(ungraded);
-
-    // Calculate pricing for graded (bonus data)
+    const mintResult   = calculatePrice(mint);
+    const nmResult     = calculatePrice(nm);
     const gradedResult = calculatePrice(graded);
 
-    if (!ungradedResult && !gradedResult) {
+    if (!mintResult && !nmResult && !gradedResult) {
       return res.json({
         success: true,
         cardName: name,
         message: 'No recent AU listings found for this card',
-        ungraded: null,
-        graded: null,
-        sales: [],
+        mint: null, nm: null, graded: null,
       });
     }
+
+    const formatResult = (r) => r ? {
+      recommendedPrice: Math.round(r.recommendedPrice * 100) / 100,
+      average:          r.average,
+      latest:           r.latest,
+      lowest:           r.lowest,
+      highest:          r.highest,
+      isTrending:       r.isTrending,
+      salesUsed:        r.salesUsed,
+      outliersRemoved:  r.outliersRemoved,
+      pricingMethod:    r.isTrending ? 'latest_sale_trending' : 'average',
+      sales:            r.sales,
+    } : null;
 
     return res.json({
       success: true,
       cardName: name,
       cardNumber: number && total ? `${number}/${total}` : '',
-      condition: condition || 'NM',
-      ungraded: ungradedResult ? {
-        recommendedPrice: Math.round(ungradedResult.recommendedPrice * 100) / 100,
-        average: ungradedResult.average,
-        latest: ungradedResult.latest,
-        lowest: ungradedResult.lowest,
-        highest: ungradedResult.highest,
-        isTrending: ungradedResult.isTrending,
-        salesUsed: ungradedResult.salesUsed,
-        outliersRemoved: ungradedResult.outliersRemoved,
-        pricingMethod: ungradedResult.isTrending ? 'latest_sale_trending' : 'average',
-        sales: ungradedResult.sales,
-      } : null,
+      mint:   formatResult(mintResult),
+      nm:     formatResult(nmResult),
       graded: gradedResult ? {
         recommendedPrice: Math.round(gradedResult.recommendedPrice * 100) / 100,
-        average: gradedResult.average,
-        salesUsed: gradedResult.salesUsed,
-        sales: gradedResult.sales,
+        average:          gradedResult.average,
+        salesUsed:        gradedResult.salesUsed,
+        sales:            gradedResult.sales,
       } : null,
     });
 
