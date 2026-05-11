@@ -130,13 +130,32 @@ async function scrapeEbaySoldListings(cardName, cardNumber, setTotal) {
   const url = `https://www.ebay.com.au/sch/i.html?_nkw=${encodedQuery}&LH_Sold=1&LH_Complete=1&_sop=13&_ipg=60&rt=nc`;
   console.log('Fetching eBay AU sold listings:', url);
 
+  // Rotate user agents to avoid detection
+  const USER_AGENTS = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_4_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Safari/605.1.15',
+  ];
+  const ua = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+
   const response = await axios.get(url, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      'Accept-Language': 'en-AU,en;q=0.9',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'User-Agent': ua,
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+      'Accept-Language': 'en-AU,en-GB;q=0.9,en;q=0.8',
+      'Accept-Encoding': 'gzip, deflate, br',
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache',
+      'Sec-Fetch-Dest': 'document',
+      'Sec-Fetch-Mode': 'navigate',
+      'Sec-Fetch-Site': 'none',
+      'Sec-Fetch-User': '?1',
+      'Upgrade-Insecure-Requests': '1',
+      'Connection': 'keep-alive',
     },
-    timeout: 20000,
+    timeout: 25000,
+    maxRedirects: 5,
   });
 
   const $ = cheerio.load(response.data);
@@ -310,10 +329,15 @@ app.get('/price', async (req, res) => {
 
   try {
     // Run sold scrape and active listings fetch in parallel
-    const [soldData, token] = await Promise.all([
-      scrapeEbaySoldListings(name, number || '', total || ''),
-      getEbayToken(),
-    ]);
+    // If scraping fails (403 etc), gracefully fall back to active-only data
+    const token = await getEbayToken();
+
+    let soldData = { mint: [], nm: [], windowUsed: 'unavailable', totalFound: 0 };
+    try {
+      soldData = await scrapeEbaySoldListings(name, number || '', total || '');
+    } catch(scrapeErr) {
+      console.warn('Sold listings scrape failed:', scrapeErr.message, '— continuing with active listings only');
+    }
 
     const activeData = await fetchActiveListings(name, number || '', total || '', token);
 
