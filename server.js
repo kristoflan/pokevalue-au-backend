@@ -373,4 +373,36 @@ app.get('/price', async (req, res) => {
   }
 });
 
+// ── Debug route — inspect raw eBay HTML to find correct selectors ────────────
+// GET /debug-ebay?q=Charizard+4/102+pokemon+card
+app.get('/debug-ebay', async (req, res) => {
+  const q = req.query.q || 'Charizard 4/102 pokemon card';
+  const ebayUrl = `https://www.ebay.com.au/sch/i.html?_nkw=${encodeURIComponent(q)}&LH_Sold=1&LH_Complete=1&_sop=13&_ipg=10`;
+  const SCRAPER_KEY = process.env.SCRAPER_API_KEY;
+  const scraperUrl = `http://api.scraperapi.com?api_key=${SCRAPER_KEY}&url=${encodeURIComponent(ebayUrl)}&country_code=au&render=false`;
+
+  try {
+    const response = await axios.get(scraperUrl, { timeout: 60000 });
+    const $ = cheerio.load(response.data);
+
+    // Try multiple possible selectors and report what we find
+    const debug = {
+      totalLength: response.data.length,
+      sItemCount:          $('.s-item').length,
+      liItemCount:         $('li.s-item').length,
+      srpResultsCount:     $('.srp-results li').length,
+      listingCount:        $('.listing').length,
+      // Grab first 2000 chars of body to inspect structure
+      htmlSnippet:         response.data.substring(0, 3000),
+      // Try to find any price-like elements
+      priceElements:       $('.s-item__price, .POSITIVE, .s-item__buyItNowPrice').map((i, el) => $(el).text()).get().slice(0, 5),
+      titleElements:       $('.s-item__title').map((i, el) => $(el).text()).get().slice(0, 5),
+    };
+
+    res.json(debug);
+  } catch(err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.listen(PORT, () => console.log(`PokéValue AU backend running on port ${PORT}`));
