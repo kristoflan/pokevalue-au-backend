@@ -3,7 +3,7 @@ const express  = require('express');
 const cors     = require('cors');
 const axios    = require('axios');
 const crypto   = require('crypto');
-const puppeteer = require('puppeteer');
+const cheerio  = require('cheerio');
 
 const app = express();
 app.use(cors());
@@ -117,150 +117,106 @@ function calculatePrice(sales) {
   };
 }
 
-// ─── SOLD LISTINGS — Puppeteer scraper ───────────────────────────────────────
-// Scrapes eBay AU completed/sold listings page directly.
-// Targets last 30 days, aiming for at least 5 sold results.
-// If fewer than 5 found in 30 days, expands to 90 days automatically.
+// ─── SOLD LISTINGS — Cheerio HTML scraper ────────────────────────────────────
+// Uses axios + cheerio to parse eBay AU sold/completed listings.
+// No headless browser needed — works on Render free tier.
+// Targets last 30 days, expands to 90 if fewer than 5 results.
 
 async function scrapeEbaySoldListings(cardName, cardNumber, setTotal) {
-  const { query, isSecret, hasNum } = buildQuery(cardName, cardNumber, setTotal);
+  const { query, isSecret } = buildQuery(cardName, cardNumber, setTotal);
   const encodedQuery = encodeURIComponent(query);
 
-  // eBay AU sold listings URL — LH_Sold=1&LH_Complete=1 shows sold items
-  // _sop=13 sorts by most recently ended first
-  const url = `https://www.ebay.com.au/sch/i.html?_nkw=${encodedQuery}&LH_Sold=1&LH_Complete=1&LH_ItemCondition=3&_sop=13&_ipg=60&Category0=&rt=nc&_trksid=p4429486.m3563.l1313`;
+  // eBay AU sold listings — LH_Sold=1&LH_Complete=1, sorted by most recently ended
+  const url = `https://www.ebay.com.au/sch/i.html?_nkw=${encodedQuery}&LH_Sold=1&LH_Complete=1&_sop=13&_ipg=60&rt=nc`;
+  console.log('Fetching eBay AU sold listings:', url);
 
-  console.log('Scraping eBay AU sold listings:', url);
-
-  const browser = await puppeteer.launch({
-    headless: 'new',
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-gpu',
-      '--single-process',
-    ],
+  const response = await axios.get(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept-Language': 'en-AU,en;q=0.9',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    timeout: 20000,
   });
 
-  try {
-    const page = await browser.newPage();
+  const $ = cheerio.load(response.data);
+  const items = [];
 
-    // Set AU locale headers so eBay serves AUD prices
-    await page.setExtraHTTPHeaders({ 'Accept-Language': 'en-AU,en;q=0.9' });
-    await page.setUserAgent(
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-    );
+  // Parse each search result item
+  $('.s-item').each((_, el) => {
+    try {
+      const title    = $(el).find('.s-item__title').text().trim();
+      const priceRaw = $(el).find('.s-item__price').text().trim();
+      const dateText = $(el).find('.s-item__ended-date, .s-item__listingDate, .POSITIVE').text().trim();
+      const link     = $(el).find('a.s-item__link').attr('href') || '';
 
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+      if (!title || title.toLowerCase().includes('shop on ebay')) return;
 
-    // Wait for search results to appear
-    await page.waitForSelector('.s-item', { timeout: 15000 }).catch(() => {});
+      // Parse price — strip currency symbol and commas
+      const priceMatch = priceRaw.replace(/,/g, '').match(/\d+\.?\d*/);
+      if (!priceMatch) return;
+      const price = parseFloat(priceMatch[0]);
+      if (!price || price < 0.5 || price > 10000) return;
 
-    // Extract sold listing data from the page
-    const items = await page.evaluate(() => {
-      const results = [];
-      const cards   = document.querySelectorAll('.s-item');
+      items.push({ title, price, dateText, url: link });
+    } catch(e) {}
+  });
 
-      cards.forEach(card => {
-        try {
-          const titleEl  = card.querySelector('.s-item__title');
-          const priceEl  = card.querySelector('.s-item__price');
-          const dateEl   = card.querySelector('.s-item__ended-date, .s-item__listingDate');
-          const linkEl   = card.querySelector('a.s-item__link');
+  console.log(`Parsed ${items.length} raw results from eBay AU sold page`);
 
-          if (!titleEl || !priceEl) return;
+  // ── Filter junk and parse dates ───────────────────────────────────────────
+  const thirtyDaysAgo  = new Date(); thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const ninetyDaysAgo  = new Date(); ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
-          const title = titleEl.textContent.trim();
-          if (title === 'Shop on eBay' || title.toLowerCase().includes('shop on ebay')) return;
-
-          // Parse price — handle ranges by taking the lower value
-          const rawPrice = priceEl.textContent.trim();
-          const priceMatch = rawPrice.match(/[\d,]+\.?\d*/);
-          if (!priceMatch) return;
-          const price = parseFloat(priceMatch[0].replace(/,/g, ''));
-          if (!price || price < 0.5) return;
-
-          // Parse sold date
-          const dateText = dateEl ? dateEl.textContent.trim() : '';
-          const url = linkEl ? linkEl.href : '';
-
-          results.push({ title, price, dateText, url });
-        } catch(e) {}
-      });
-
-      return results;
+  const processed = items
+    .filter(item => !isJunk(item.title) && !isGraded(item.title))
+    .filter(item => {
+      if (isSecret) {
+        return item.title.toLowerCase().includes(cardName.split(' ')[0].toLowerCase());
+      }
+      return true;
+    })
+    .map(item => {
+      // eBay date formats: "23 Apr 2025", "Sold 23 Apr 2025"
+      const cleaned = item.dateText.replace(/sold/i, '').trim();
+      let date = new Date(cleaned);
+      if (isNaN(date.getTime())) date = new Date(); // fallback
+      return {
+        title:     item.title,
+        price:     item.price,
+        date:      date.toISOString(),
+        url:       item.url,
+        condition: detectCondition(item.title),
+      };
     });
 
-    console.log(`Scraped ${items.length} sold listings from eBay AU`);
+  // ── Apply time window logic ───────────────────────────────────────────────
+  const within30 = processed.filter(i => new Date(i.date) >= thirtyDaysAgo);
+  const within90 = processed.filter(i => new Date(i.date) >= ninetyDaysAgo);
 
-    // ── Filter and parse dates ────────────────────────────────────────────
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  let finalSales, windowUsed;
 
-    const ninetyDaysAgo = new Date();
-    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-
-    const processed = items
-      .filter(item => !isJunk(item.title) && !isGraded(item.title))
-      .filter(item => {
-        if (isSecret) {
-          const firstWord = cardName.split(' ')[0].toLowerCase();
-          return item.title.toLowerCase().includes(firstWord);
-        }
-        return true;
-      })
-      .map(item => {
-        // Try to parse the date from eBay's format (e.g. "Sold  23 Apr 2025")
-        const cleaned = item.dateText.replace(/sold/i, '').trim();
-        let date = new Date(cleaned);
-        if (isNaN(date.getTime())) date = new Date(); // fallback to now
-
-        return {
-          title:     item.title,
-          price:     item.price,
-          date:      date.toISOString(),
-          url:       item.url,
-          condition: detectCondition(item.title),
-        };
-      });
-
-    // ── Apply 30-day window, expand to 90 if too few ──────────────────────
-    const within30 = processed.filter(i => new Date(i.date) >= thirtyDaysAgo);
-    const within90 = processed.filter(i => new Date(i.date) >= ninetyDaysAgo);
-
-    let finalSales;
-    let windowUsed;
-
-    if (within30.length >= 5) {
-      // Enough data in 30 days — use last 5
-      finalSales = within30.slice(0, 5);
-      windowUsed = '30 days';
-    } else if (within90.length >= 3) {
-      // Expand to 90 days
-      finalSales = within90.slice(0, 10);
-      windowUsed = '90 days';
-      console.log(`Only ${within30.length} sales in 30 days — expanded to 90 days (${within90.length} found)`);
-    } else {
-      // Just use whatever we have
-      finalSales = processed.slice(0, 10);
-      windowUsed = 'all available';
-      console.log(`Sparse data — using all ${processed.length} available sold listings`);
-    }
-
-    // ── Bucket by condition ───────────────────────────────────────────────
-    const mint    = finalSales.filter(s => s.condition === 'mint');
-    const nm      = finalSales.filter(s => s.condition === 'nm');
-    const unknown = finalSales.filter(s => s.condition === 'unknown');
-    const nmFinal = [...nm, ...unknown]; // Unknowns fold into NM
-
-    console.log(`Sold — Mint: ${mint.length}, NM: ${nmFinal.length} (window: ${windowUsed})`);
-
-    return { mint, nm: nmFinal, windowUsed, totalFound: processed.length };
-
-  } finally {
-    await browser.close();
+  if (within30.length >= 5) {
+    finalSales = within30.slice(0, 5);
+    windowUsed = '30 days';
+  } else if (within90.length >= 3) {
+    finalSales = within90.slice(0, 10);
+    windowUsed = '90 days';
+    console.log(`Expanded to 90 days — found ${within90.length} sales`);
+  } else {
+    finalSales = processed.slice(0, 10);
+    windowUsed = 'all available';
+    console.log(`Sparse data — using all ${processed.length} available`);
   }
+
+  // ── Bucket by condition ───────────────────────────────────────────────────
+  const mint    = finalSales.filter(s => s.condition === 'mint');
+  const nm      = finalSales.filter(s => s.condition === 'nm');
+  const unknown = finalSales.filter(s => s.condition === 'unknown');
+  const nmFinal = [...nm, ...unknown];
+
+  console.log(`Sold — Mint: ${mint.length}, NM: ${nmFinal.length}, window: ${windowUsed}`);
+  return { mint, nm: nmFinal, windowUsed, totalFound: processed.length };
 }
 
 // ─── ACTIVE LISTINGS — eBay Browse API ───────────────────────────────────────
