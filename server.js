@@ -1,9 +1,8 @@
 require('dotenv').config();
-const express  = require('express');
-const cors     = require('cors');
-const axios    = require('axios');
-const crypto   = require('crypto');
-const cheerio  = require('cheerio');
+const express = require('express');
+const cors    = require('cors');
+const axios   = require('axios');
+const crypto  = require('crypto');
 
 const app = express();
 app.use(cors());
@@ -17,9 +16,7 @@ let tokenExpiry = 0;
 
 async function getEbayToken() {
   if (cachedToken && Date.now() < tokenExpiry) return cachedToken;
-  const credentials = Buffer.from(
-    `${process.env.EBAY_APP_ID}:${process.env.EBAY_CERT_ID}`
-  ).toString('base64');
+  const credentials = Buffer.from(`${process.env.EBAY_APP_ID}:${process.env.EBAY_CERT_ID}`).toString('base64');
   const res = await axios.post(
     'https://api.ebay.com/identity/v1/oauth2/token',
     'grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope',
@@ -30,67 +27,61 @@ async function getEbayToken() {
   return cachedToken;
 }
 
-// ─── Filtering helpers ────────────────────────────────────────────────────────
+// ─── Filtering ────────────────────────────────────────────────────────────────
 const GRADED_KEYWORDS = ['psa', 'bgs', 'cgc', 'ace', 'sgc', 'graded', 'grade'];
 const JUNK_KEYWORDS = [
-  'lot', 'bulk', 'bundle', 'collection', 'x10', 'x20', 'x50', '10x', '20x', '50x',
+  'lot', 'bulk', 'bundle', 'x10', 'x20', 'x50', '10x', '20x', '50x',
   'reprint', 'proxy', 'fake', 'custom',
-  'booster', 'booster box', 'booster pack', 'display', 'display box',
+  'booster', 'booster box', 'booster pack', 'display box',
   'etb', 'elite trainer', 'tin', 'tray', 'gift box', 'blister',
   'collection box', 'premium collection', 'special collection',
   'extended art tray', 'extended art box', 'art tray',
   'promo box', 'promo pack', 'promo tin',
   'playmat', 'binder', 'sleeve', 'sleeves', 'deckbox', 'deck box',
-  'album', 'folder', 'portfolio', 'figure', 'plush', 'pin', 'badge',
-  'coin', 'dice', 'token', 'energy bundle', 'card bundle',
+  'album', 'folder', 'figure', 'plush', 'pin', 'coin', 'dice', 'token',
   'damaged', 'heavily played',
 ];
+const MINT_KEYWORDS = ['gem mint', 'gem-mint', 'perfect', ' mint ', 'mint/nm', 'nm/mint'];
+const NM_KEYWORDS   = ['near mint', 'near-mint', 'nm/m', 'nm-m', ' nm ', 'excellent', 'lightly played', ' lp '];
 
-const MINT_KEYWORDS = ['gem mint', 'gem-mint', 'psa 10', 'perfect', ' mint ', 'mint/nm', 'nm/mint'];
-const NM_KEYWORDS   = ['near mint', 'near-mint', 'nm/m', 'nm-m', ' nm ', 'excellent', 'lightly played', 'lp'];
-
-function isGraded(title) { return GRADED_KEYWORDS.some(k => title.toLowerCase().includes(k)); }
-function isJunk(title)   { return JUNK_KEYWORDS.some(k => title.toLowerCase().includes(k)); }
-
-function detectCondition(title) {
-  const lower = title.toLowerCase();
-  if (MINT_KEYWORDS.some(k => lower.includes(k))) return 'mint';
-  if (NM_KEYWORDS.some(k => lower.includes(k)))   return 'nm';
+function isGraded(t) { return GRADED_KEYWORDS.some(k => t.toLowerCase().includes(k)); }
+function isJunk(t)   { return JUNK_KEYWORDS.some(k => t.toLowerCase().includes(k)); }
+function detectCondition(t) {
+  const l = t.toLowerCase();
+  if (MINT_KEYWORDS.some(k => l.includes(k))) return 'mint';
+  if (NM_KEYWORDS.some(k => l.includes(k)))   return 'nm';
   return 'unknown';
 }
 
 // ─── Query builder ────────────────────────────────────────────────────────────
 function buildQuery(cardName, cardNumber, setTotal) {
-  const numInt   = parseInt(cardNumber, 10);
-  const totalInt = parseInt(setTotal,   10);
-  const isSecret = cardNumber && setTotal && !isNaN(numInt) && !isNaN(totalInt) && numInt > totalInt;
-  const hasNum   = cardNumber && setTotal && !isNaN(numInt) && !isNaN(totalInt) && numInt <= totalInt;
+  const num   = parseInt(cardNumber, 10);
+  const total = parseInt(setTotal,   10);
+  const isSecret = cardNumber && setTotal && !isNaN(num) && !isNaN(total) && num > total;
+  const hasNum   = cardNumber && setTotal && !isNaN(num) && !isNaN(total) && num <= total;
 
-  let query;
-  if (isSecret)   query = `${cardName} ${cardNumber} pokemon card`;
-  else if (hasNum) query = `${cardName} ${cardNumber}/${setTotal} pokemon card`;
-  else             query = `${cardName} pokemon card`;
-
-  return { query, isSecret, hasNum };
+  if (isSecret)  return { query: `${cardName} ${cardNumber} pokemon card`, isSecret, hasNum };
+  if (hasNum)    return { query: `${cardName} ${cardNumber}/${setTotal} pokemon card`, isSecret, hasNum };
+  return           { query: `${cardName} pokemon card`, isSecret: false, hasNum: false };
 }
 
 // ─── Outlier removal (IQR) ────────────────────────────────────────────────────
 function removeOutliers(prices) {
   if (prices.length < 4) return prices;
-  const sorted = [...prices].sort((a, b) => a - b);
-  const q1  = sorted[Math.floor(sorted.length * 0.25)];
-  const q3  = sorted[Math.floor(sorted.length * 0.75)];
+  const s  = [...prices].sort((a, b) => a - b);
+  const q1 = s[Math.floor(s.length * 0.25)];
+  const q3 = s[Math.floor(s.length * 0.75)];
   const iqr = q3 - q1;
-  const filtered = prices.filter(p => p >= q1 - 1.5 * iqr && p <= q3 + 1.5 * iqr);
-  return filtered.length >= 3 ? filtered : prices.slice(0, 3);
+  const f = prices.filter(p => p >= q1 - 1.5 * iqr && p <= q3 + 1.5 * iqr);
+  return f.length >= 3 ? f : prices.slice(0, 3);
 }
 
-// ─── Pricing calculator ───────────────────────────────────────────────────────
+// ─── Price calculator ─────────────────────────────────────────────────────────
 function calculatePrice(sales) {
   if (!sales.length) return null;
-  const sorted    = [...sales].sort((a, b) => new Date(a.date) - new Date(b.date));
-  const rawPrices = sorted.map(s => s.price);
-  const clean     = removeOutliers(rawPrices);
+  const sorted = [...sales].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const raw    = sorted.map(s => s.price);
+  const clean  = removeOutliers(raw);
 
   let isTrending = false;
   if (clean.length >= 4) {
@@ -100,139 +91,29 @@ function calculatePrice(sales) {
     isTrending = avg2 / avg1 > 1.08;
   }
 
-  const average = clean.reduce((a, b) => a + b, 0) / clean.length;
-  const latest  = clean[clean.length - 1];
+  const avg    = clean.reduce((a, b) => a + b, 0) / clean.length;
+  const latest = clean[clean.length - 1];
 
   return {
-    recommendedPrice:  Math.round((isTrending ? latest : average) * 100) / 100,
-    average:           Math.round(average * 100) / 100,
-    latest:            Math.round(latest  * 100) / 100,
-    lowest:            Math.round(Math.min(...clean) * 100) / 100,
-    highest:           Math.round(Math.max(...clean) * 100) / 100,
+    recommendedPrice: Math.round((isTrending ? latest : avg) * 100) / 100,
+    average:          Math.round(avg    * 100) / 100,
+    latest:           Math.round(latest * 100) / 100,
+    lowest:           Math.round(Math.min(...clean) * 100) / 100,
+    highest:          Math.round(Math.max(...clean) * 100) / 100,
     isTrending,
-    salesUsed:         clean.length,
-    outliersRemoved:   rawPrices.length - clean.length,
-    pricingMethod:     isTrending ? 'latest_sale_trending' : 'average',
-    sales:             sorted,
+    salesUsed:        clean.length,
+    outliersRemoved:  raw.length - clean.length,
+    pricingMethod:    isTrending ? 'latest_sale_trending' : 'average',
+    sales:            sorted,
   };
 }
 
-// ─── SOLD LISTINGS — Cheerio HTML scraper ────────────────────────────────────
-// Uses axios + cheerio to parse eBay AU sold/completed listings.
-// No headless browser needed — works on Render free tier.
-// Targets last 30 days, expands to 90 if fewer than 5 results.
-
-async function scrapeEbaySoldListings(cardName, cardNumber, setTotal) {
-  const { query, isSecret } = buildQuery(cardName, cardNumber, setTotal);
-  const encodedQuery = encodeURIComponent(query);
-
-  // eBay AU sold listings — LH_Sold=1&LH_Complete=1, sorted by most recently ended
-  const url = `https://www.ebay.com.au/sch/i.html?_nkw=${encodedQuery}&LH_Sold=1&LH_Complete=1&_sop=13&_ipg=60&rt=nc`;
-  console.log('Fetching eBay AU sold listings:', url);
-
-  // Route through ScraperAPI to bypass eBay's datacenter IP blocks.
-  // ScraperAPI uses residential IPs that eBay cannot detect or block.
-  const SCRAPER_KEY = process.env.SCRAPER_API_KEY;
-  if (!SCRAPER_KEY) throw new Error('SCRAPER_API_KEY environment variable not set');
-
-  // ScraperAPI endpoint — passes our target URL as a parameter
-  // country_code=au ensures we get Australian eBay results in AUD
-  const scraperUrl = `http://api.scraperapi.com?api_key=${SCRAPER_KEY}&url=${encodeURIComponent(url)}&country_code=au&render=false`;
-  console.log('Routing through ScraperAPI for AU residential IP...');
-
-  const response = await axios.get(scraperUrl, {
-    timeout: 60000, // ScraperAPI can take up to 60s on first request
-    maxRedirects: 5,
-  });
-
-  const $ = cheerio.load(response.data);
-  const items = [];
-
-  // Parse each search result item
-  $('.s-item').each((_, el) => {
-    try {
-      const title    = $(el).find('.s-item__title').text().trim();
-      const priceRaw = $(el).find('.s-item__price').text().trim();
-      const dateText = $(el).find('.s-item__ended-date, .s-item__listingDate, .POSITIVE').text().trim();
-      const link     = $(el).find('a.s-item__link').attr('href') || '';
-
-      if (!title || title.toLowerCase().includes('shop on ebay')) return;
-
-      // Parse price — strip currency symbol and commas
-      const priceMatch = priceRaw.replace(/,/g, '').match(/\d+\.?\d*/);
-      if (!priceMatch) return;
-      const price = parseFloat(priceMatch[0]);
-      if (!price || price < 0.5 || price > 10000) return;
-
-      items.push({ title, price, dateText, url: link });
-    } catch(e) {}
-  });
-
-  console.log(`Parsed ${items.length} raw results from eBay AU sold page`);
-
-  // ── Filter junk and parse dates ───────────────────────────────────────────
-  const thirtyDaysAgo  = new Date(); thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const ninetyDaysAgo  = new Date(); ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-
-  const processed = items
-    .filter(item => !isJunk(item.title) && !isGraded(item.title))
-    .filter(item => {
-      if (isSecret) {
-        return item.title.toLowerCase().includes(cardName.split(' ')[0].toLowerCase());
-      }
-      return true;
-    })
-    .map(item => {
-      // eBay date formats: "23 Apr 2025", "Sold 23 Apr 2025"
-      const cleaned = item.dateText.replace(/sold/i, '').trim();
-      let date = new Date(cleaned);
-      if (isNaN(date.getTime())) date = new Date(); // fallback
-      return {
-        title:     item.title,
-        price:     item.price,
-        date:      date.toISOString(),
-        url:       item.url,
-        condition: detectCondition(item.title),
-      };
-    });
-
-  // ── Apply time window logic ───────────────────────────────────────────────
-  const within30 = processed.filter(i => new Date(i.date) >= thirtyDaysAgo);
-  const within90 = processed.filter(i => new Date(i.date) >= ninetyDaysAgo);
-
-  let finalSales, windowUsed;
-
-  if (within30.length >= 5) {
-    finalSales = within30.slice(0, 5);
-    windowUsed = '30 days';
-  } else if (within90.length >= 3) {
-    finalSales = within90.slice(0, 10);
-    windowUsed = '90 days';
-    console.log(`Expanded to 90 days — found ${within90.length} sales`);
-  } else {
-    finalSales = processed.slice(0, 10);
-    windowUsed = 'all available';
-    console.log(`Sparse data — using all ${processed.length} available`);
-  }
-
-  // ── Bucket by condition ───────────────────────────────────────────────────
-  const mint    = finalSales.filter(s => s.condition === 'mint');
-  const nm      = finalSales.filter(s => s.condition === 'nm');
-  const unknown = finalSales.filter(s => s.condition === 'unknown');
-  const nmFinal = [...nm, ...unknown];
-
-  console.log(`Sold — Mint: ${mint.length}, NM: ${nmFinal.length}, window: ${windowUsed}`);
-  return { mint, nm: nmFinal, windowUsed, totalFound: processed.length };
-}
-
-// ─── ACTIVE LISTINGS — eBay Browse API ───────────────────────────────────────
-// Keeps the existing Browse API for current asking prices.
-
+// ─── eBay Browse API — active listings ───────────────────────────────────────
 async function fetchActiveListings(cardName, cardNumber, setTotal, token) {
-  const { query: primaryQuery, isSecret, hasNum } = buildQuery(cardName, cardNumber, setTotal);
-  console.log('Fetching active listings:', primaryQuery);
+  const { query, isSecret, hasNum } = buildQuery(cardName, cardNumber, setTotal);
+  console.log('Fetching active listings:', query);
 
-  const fetchQuery = async (q) => {
+  const fetch50 = async (q) => {
     const res = await axios.get('https://api.ebay.com/buy/browse/v1/item_summary/search', {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -256,152 +137,108 @@ async function fetchActiveListings(cardName, cardNumber, setTotal, token) {
     return res.data?.itemSummaries || [];
   };
 
-  let items = await fetchQuery(primaryQuery);
+  let items = await fetch50(query);
+
+  // Fallback to name-only if too few results
   if (items.length < 5 && hasNum) {
-    const broad = await fetchQuery(`${cardName} pokemon card`);
+    const broad = await fetch50(`${cardName} pokemon card`);
     const seen  = new Set(items.map(i => i.itemId));
     broad.forEach(i => { if (!seen.has(i.itemId)) items.push(i); });
   }
 
-  const ungraded = [];
-  const graded   = [];
+  const mint = [], nm = [], unknown = [], graded = [];
 
   items.forEach(item => {
     const title = item.title || '';
     const price = Math.round(parseFloat(item.price?.value || 0) * 100) / 100;
     if (price < 0.50 || price > 10000 || isJunk(title)) return;
-    if (isSecret) {
-      if (!title.toLowerCase().includes(cardName.split(' ')[0].toLowerCase())) return;
+    if (isSecret && !title.toLowerCase().includes(cardName.split(' ')[0].toLowerCase())) return;
+
+    const sale = {
+      title, price,
+      date: item.itemCreationDate || new Date().toISOString(),
+      url:  item.itemWebUrl,
+    };
+
+    if (isGraded(title)) {
+      graded.push(sale);
+    } else {
+      const c = detectCondition(title);
+      if (c === 'mint')    mint.push(sale);
+      else if (c === 'nm') nm.push(sale);
+      else                 unknown.push(sale);
     }
-    const sale = { title, price, date: item.itemCreationDate || new Date().toISOString(), url: item.itemWebUrl, condition: item.condition };
-    isGraded(title) ? graded.push(sale) : ungraded.push(sale);
   });
 
-  // Bucket active listings by condition
-  const mint    = ungraded.filter(s => detectCondition(s.title) === 'mint').slice(0, 10);
-  const nm      = ungraded.filter(s => detectCondition(s.title) !== 'mint').slice(0, 10);
+  const nmFinal = [...nm, ...unknown].slice(0, 10);
+  console.log(`Active — Mint: ${mint.length}, NM: ${nmFinal.length}, Graded: ${graded.length}`);
 
-  console.log(`Active — Mint: ${mint.length}, NM: ${nm.length}, Graded: ${graded.length}`);
-  return { mint, nm, graded: graded.slice(0, 10) };
+  return {
+    mint:   mint.slice(0, 10),
+    nm:     nmFinal,
+    graded: graded.slice(0, 10),
+  };
 }
 
+const fmt = r => r ? {
+  recommendedPrice: r.recommendedPrice,
+  average:          r.average,
+  latest:           r.latest,
+  lowest:           r.lowest,
+  highest:          r.highest,
+  isTrending:       r.isTrending,
+  salesUsed:        r.salesUsed,
+  outliersRemoved:  r.outliersRemoved,
+  pricingMethod:    r.pricingMethod,
+  sales:            r.sales,
+} : null;
+
 // ─── Routes ──────────────────────────────────────────────────────────────────
+app.get('/', (req, res) => res.json({ status: 'PokéValue AU running', version: '2.1.0' }));
 
-app.get('/', (req, res) => {
-  res.json({ status: 'PokéValue AU backend running', version: '2.0.0' });
-});
-
-// eBay challenge validation
+// eBay notification challenge
 app.get('/ebay/account-deletion', (req, res) => {
-  const challengeCode = req.query.challenge_code;
-  if (!challengeCode) return res.status(200).json({ status: 'endpoint live' });
-  const token    = process.env.EBAY_VERIFICATION_TOKEN || 'pokevalue-au-ebay-verify-token-2026';
-  const endpoint = process.env.EBAY_ENDPOINT_URL || 'https://pokevalue-au-backend.onrender.com/ebay/account-deletion';
-  const hash     = crypto.createHash('sha256');
-  hash.update(challengeCode); hash.update(token); hash.update(endpoint);
+  const c = req.query.challenge_code;
+  if (!c) return res.json({ status: 'live' });
+  const vt  = process.env.EBAY_VERIFICATION_TOKEN || 'pokevalue-au-ebay-verify-token-2026';
+  const ep  = process.env.EBAY_ENDPOINT_URL || 'https://pokevalue-au-backend.onrender.com/ebay/account-deletion';
+  const h   = crypto.createHash('sha256');
+  h.update(c); h.update(vt); h.update(ep);
   res.setHeader('Content-Type', 'application/json');
-  return res.status(200).json({ challengeResponse: hash.digest('hex') });
+  return res.json({ challengeResponse: h.digest('hex') });
 });
+app.post('/ebay/account-deletion', (req, res) => res.json({ acknowledged: true }));
 
-app.post('/ebay/account-deletion', (req, res) => {
-  res.status(200).json({ acknowledged: true });
-});
-
-// ─── Main pricing endpoint ────────────────────────────────────────────────────
-// Returns both sold (scraped) and active (Browse API) data
+// Main pricing endpoint
 // GET /price?name=Charizard&number=4&total=102
 app.get('/price', async (req, res) => {
   const { name, number, total } = req.query;
-  if (!name) return res.status(400).json({ error: 'Card name is required' });
+  if (!name) return res.status(400).json({ error: 'name is required' });
 
   try {
-    // Run sold scrape and active listings fetch in parallel
-    // If scraping fails (403 etc), gracefully fall back to active-only data
-    const token = await getEbayToken();
-
-    let soldData = { mint: [], nm: [], windowUsed: 'unavailable', totalFound: 0 };
-    try {
-      soldData = await scrapeEbaySoldListings(name, number || '', total || '');
-    } catch(scrapeErr) {
-      console.warn('Sold listings scrape failed:', scrapeErr.message, '— continuing with active listings only');
-    }
-
+    const token      = await getEbayToken();
     const activeData = await fetchActiveListings(name, number || '', total || '', token);
 
-    const fmt = (r) => r ? {
-      recommendedPrice: r.recommendedPrice,
-      average:          r.average,
-      latest:           r.latest,
-      lowest:           r.lowest,
-      highest:          r.highest,
-      isTrending:       r.isTrending,
-      salesUsed:        r.salesUsed,
-      outliersRemoved:  r.outliersRemoved,
-      pricingMethod:    r.pricingMethod,
-      sales:            r.sales,
-    } : null;
+    const gradedCalc = calculatePrice(activeData.graded);
 
     return res.json({
-      success: true,
-      cardName: name,
+      success:    true,
+      cardName:   name,
       cardNumber: number && total ? `${number}/${total}` : '',
-
-      // ── Sold listings (scraped — actual prices paid) ───────────────────
-      sold: {
-        windowUsed:  soldData.windowUsed,
-        totalFound:  soldData.totalFound,
-        mint:        fmt(calculatePrice(soldData.mint)),
-        nm:          fmt(calculatePrice(soldData.nm)),
-      },
-
-      // ── Active listings (Browse API — current asking prices) ──────────
       active: {
         mint:   fmt(calculatePrice(activeData.mint)),
         nm:     fmt(calculatePrice(activeData.nm)),
-        graded: activeData.graded.length ? {
-          recommendedPrice: fmt(calculatePrice(activeData.graded))?.recommendedPrice,
-          average:          fmt(calculatePrice(activeData.graded))?.average,
-          salesUsed:        fmt(calculatePrice(activeData.graded))?.salesUsed,
+        graded: gradedCalc ? {
+          recommendedPrice: gradedCalc.recommendedPrice,
+          average:          gradedCalc.average,
+          salesUsed:        gradedCalc.salesUsed,
           sales:            activeData.graded,
         } : null,
       },
     });
-
   } catch (err) {
-    console.error('Pricing error:', err?.message || err);
-    return res.status(500).json({ error: 'Failed to fetch pricing data', detail: err?.message });
-  }
-});
-
-// ── Debug route — inspect raw eBay HTML to find correct selectors ────────────
-// GET /debug-ebay?q=Charizard+4/102+pokemon+card
-app.get('/debug-ebay', async (req, res) => {
-  const q = req.query.q || 'Charizard 4/102 pokemon card';
-  const ebayUrl = `https://www.ebay.com.au/sch/i.html?_nkw=${encodeURIComponent(q)}&LH_Sold=1&LH_Complete=1&_sop=13&_ipg=10`;
-  const SCRAPER_KEY = process.env.SCRAPER_API_KEY;
-  const scraperUrl = `http://api.scraperapi.com?api_key=${SCRAPER_KEY}&url=${encodeURIComponent(ebayUrl)}&country_code=au&render=false`;
-
-  try {
-    const response = await axios.get(scraperUrl, { timeout: 60000 });
-    const $ = cheerio.load(response.data);
-
-    // Try multiple possible selectors and report what we find
-    const debug = {
-      totalLength: response.data.length,
-      sItemCount:          $('.s-item').length,
-      liItemCount:         $('li.s-item').length,
-      srpResultsCount:     $('.srp-results li').length,
-      listingCount:        $('.listing').length,
-      // Grab first 2000 chars of body to inspect structure
-      htmlSnippet:         response.data.substring(0, 3000),
-      // Try to find any price-like elements
-      priceElements:       $('.s-item__price, .POSITIVE, .s-item__buyItNowPrice').map((i, el) => $(el).text()).get().slice(0, 5),
-      titleElements:       $('.s-item__title').map((i, el) => $(el).text()).get().slice(0, 5),
-    };
-
-    res.json(debug);
-  } catch(err) {
-    res.status(500).json({ error: err.message });
+    console.error('Pricing error:', err?.message);
+    return res.status(500).json({ error: 'Failed to fetch pricing', detail: err?.message });
   }
 });
 
