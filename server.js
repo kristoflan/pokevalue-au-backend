@@ -60,9 +60,9 @@ function buildQuery(cardName, cardNumber, setTotal) {
   const isSecret = cardNumber && setTotal && !isNaN(num) && !isNaN(total) && num > total;
   const hasNum   = cardNumber && setTotal && !isNaN(num) && !isNaN(total) && num <= total;
 
-  if (isSecret)  return { query: `${cardName} ${cardNumber} pokemon card`, isSecret, hasNum };
-  if (hasNum)    return { query: `${cardName} ${cardNumber}/${setTotal} pokemon card`, isSecret, hasNum };
-  return           { query: `${cardName} pokemon card`, isSecret: false, hasNum: false };
+  if (isSecret)  return { query: `${cardName} ${cardNumber}`, isSecret, hasNum };
+  if (hasNum)    return { query: `${cardName} ${cardNumber}/${setTotal}`, isSecret, hasNum };
+  return           { query: cardName, isSecret: false, hasNum: false };
 }
 
 // ─── Outlier removal (IQR) ────────────────────────────────────────────────────
