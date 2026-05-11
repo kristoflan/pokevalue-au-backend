@@ -30,15 +30,24 @@ async function getEbayToken() {
 // ─── Filtering ────────────────────────────────────────────────────────────────
 const GRADED_KEYWORDS = ['psa', 'bgs', 'cgc', 'ace', 'sgc', 'graded', 'grade'];
 const JUNK_KEYWORDS = [
+  // Bulk / lots
   'lot', 'bulk', 'bundle', 'x10', 'x20', 'x50', '10x', '20x', '50x',
+  // Fakes / reprints / custom art
   'reprint', 'proxy', 'fake', 'custom',
+  'framed', 'frame', 'canvas', 'print', 'poster', 'art print',
+  'extended art', 'full art print', 'metal card', 'gold card',
+  'custom card', 'fan art', 'orica', 'holo overlay',
+  // Sealed product
   'booster', 'booster box', 'booster pack', 'display box',
-  'etb', 'elite trainer', 'tin', 'tray', 'gift box', 'blister',
+  'etb', 'elite trainer', 'tin', 'gift box', 'blister',
   'collection box', 'premium collection', 'special collection',
-  'extended art tray', 'extended art box', 'art tray',
   'promo box', 'promo pack', 'promo tin',
+  // Trays and display items
+  'tray', 'art tray', 'extended art tray', 'extended art box',
+  // Accessories
   'playmat', 'binder', 'sleeve', 'sleeves', 'deckbox', 'deck box',
   'album', 'folder', 'figure', 'plush', 'pin', 'coin', 'dice', 'token',
+  // Condition flags we never want
   'damaged', 'heavily played',
 ];
 const MINT_KEYWORDS = ['gem mint', 'gem-mint', 'perfect', ' mint ', 'mint/nm', 'nm/mint'];
