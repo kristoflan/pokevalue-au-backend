@@ -160,23 +160,21 @@ async function fetchActiveListings(cardName, cardNumber, setTotal, token) {
       url:  item.itemWebUrl,
     };
 
-    if (isGraded(title)) {
-      graded.push(sale);
-    } else {
-      const c = detectCondition(title);
-      if (c === 'mint')    mint.push(sale);
-      else if (c === 'nm') nm.push(sale);
-      else                 unknown.push(sale);
-    }
+    // Graded cards excluded from results for now — dedicated graded search coming later
+    if (isGraded(title)) return;
+
+    const c = detectCondition(title);
+    if (c === 'mint')    mint.push(sale);
+    else if (c === 'nm') nm.push(sale);
+    else                 unknown.push(sale);
   });
 
   const nmFinal = [...nm, ...unknown].slice(0, 10);
-  console.log(`Active — Mint: ${mint.length}, NM: ${nmFinal.length}, Graded: ${graded.length}`);
+  console.log(`Active — Mint: ${mint.length}, NM: ${nmFinal.length}`);
 
   return {
-    mint:   mint.slice(0, 10),
-    nm:     nmFinal,
-    graded: graded.slice(0, 10),
+    mint: mint.slice(0, 10),
+    nm:   nmFinal,
   };
 }
 
@@ -219,21 +217,13 @@ app.get('/price', async (req, res) => {
     const token      = await getEbayToken();
     const activeData = await fetchActiveListings(name, number || '', total || '', token);
 
-    const gradedCalc = calculatePrice(activeData.graded);
-
-    return res.json({
+      return res.json({
       success:    true,
       cardName:   name,
       cardNumber: number && total ? `${number}/${total}` : '',
       active: {
-        mint:   fmt(calculatePrice(activeData.mint)),
-        nm:     fmt(calculatePrice(activeData.nm)),
-        graded: gradedCalc ? {
-          recommendedPrice: gradedCalc.recommendedPrice,
-          average:          gradedCalc.average,
-          salesUsed:        gradedCalc.salesUsed,
-          sales:            activeData.graded,
-        } : null,
+        mint: fmt(calculatePrice(activeData.mint)),
+        nm:   fmt(calculatePrice(activeData.nm)),
       },
     });
   } catch (err) {
