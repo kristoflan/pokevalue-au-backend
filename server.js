@@ -127,55 +127,94 @@ function calculatePrice(sales) {
 async function fetchEbayListings(cardName, cardNumber, setTotal, condition) {
   const token = await getEbayToken();
 
-  const conditionMap = {
-    'NM': 'near mint',
-    'LP': 'lightly played',
-    'MP': 'moderately played',
-    'HP': 'heavily played',
+  // ── Smart query building ─────────────────────────────────────────────────
+  // Secret rares have a card number HIGHER than the set total (e.g. 136/131).
+  // Sellers almost never include this number in listings, so including it
+  // in the search query kills results. We detect this and omit the number.
+  // Condition is also removed from keywords — it filters too aggressively
+  // since sellers write "NM", "Near Mint", "Mint" etc. inconsistently.
+  // We use eBay's built-in condition filter instead.
+
+  const numInt   = parseInt(cardNumber, 10);
+  const totalInt = parseInt(setTotal,   10);
+  const isSecretRare   = cardNumber && setTotal && !isNaN(numInt) && !isNaN(totalInt) && numInt > totalInt;
+  const hasValidNumber = cardNumber && setTotal && !isNaN(numInt) && !isNaN(totalInt) && numInt <= totalInt;
+
+  let primaryQuery;
+  if (isSecretRare) {
+    primaryQuery = `${cardName} pokemon card`;
+    console.log(`Secret rare detected (${cardNumber}/${setTotal}) — omitting number from query`);
+  } else if (hasValidNumber) {
+    primaryQuery = `${cardName} ${cardNumber}/${setTotal} pokemon card`;
+  } else {
+    primaryQuery = `${cardName} pokemon card`;
+  }
+
+  console.log('Primary eBay AU query:', primaryQuery);
+
+  // eBay condition IDs: 1000=New, 2750=Like New, 3000=Very Good, 4000=Good
+  // Casting a wider net here — our title filtering cleans up the rest
+  const conditionFilter = 'conditionIds:{1000|2750|3000|4000}';
+
+  const fetchQuery = async (q) => {
+    const res = await axios.get('https://api.ebay.com/buy/browse/v1/item_summary/search', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'X-EBAY-C-MARKETPLACE-ID': 'EBAY_AU',
+        'Content-Type': 'application/json',
+      },
+      params: {
+        q,
+        filter: [
+          'buyingOptions:{FIXED_PRICE}',
+          'itemLocationCountry:AU',
+          'price:[0.50..10000]',
+          'priceCurrency:AUD',
+          conditionFilter,
+        ].join(','),
+        category_ids: '183454',
+        limit: 50,
+        sort: 'newlyListed',
+      },
+    });
+    return res.data?.itemSummaries || [];
   };
-  const conditionStr = conditionMap[condition] || condition || 'near mint';
-  const query = `${cardName} ${cardNumber}/${setTotal} pokemon card ${conditionStr}`;
-  console.log('Searching eBay AU for:', query);
 
-  const res = await axios.get('https://api.ebay.com/buy/browse/v1/item_summary/search', {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'X-EBAY-C-MARKETPLACE-ID': 'EBAY_AU',
-      'Content-Type': 'application/json',
-    },
-    params: {
-      q: query,
-      filter: [
-        'buyingOptions:{FIXED_PRICE}',
-        'itemLocationCountry:AU',
-        'price:[0.50..5000]',
-        'priceCurrency:AUD',
-      ].join(','),
-      category_ids: '183454',
-      limit: 30, // Fetch more so we have enough after filtering
-      sort: 'newlyListed',
-    },
-  });
+  let items = await fetchQuery(primaryQuery);
+  console.log(`Primary query results: ${items.length}`);
 
-  const items = res.data?.itemSummaries || [];
-  console.log(`Raw eBay results: ${items.length}`);
+  // ── Fallback: if too few results, broaden to name-only ───────────────────
+  if (items.length < 5 && hasValidNumber) {
+    console.log('Too few results — trying broader name-only query');
+    const broadItems = await fetchQuery(`${cardName} pokemon card`);
+    console.log(`Broad query results: ${broadItems.length}`);
+    const seen = new Set(items.map(i => i.itemId));
+    broadItems.forEach(i => { if (!seen.has(i.itemId)) items.push(i); });
+    console.log(`Total after merge: ${items.length}`);
+  }
 
-  // Separate into ungraded and graded
+  // ── Filter and separate ───────────────────────────────────────────────────
   const ungraded = [];
-  const graded = [];
+  const graded   = [];
 
   items.forEach(item => {
     const title = item.title || '';
     const price = Math.round(parseFloat(item.price?.value || 0) * 100) / 100;
 
-    if (price < 0.50 || price > 10000) return; // Skip impossible prices
-    if (isJunk(title)) return; // Skip bulk lots etc.
+    if (price < 0.50 || price > 10000) return;
+    if (isJunk(title)) return;
+
+    // For secret rares, verify the card name appears in the listing title
+    if (isSecretRare) {
+      const firstWord = cardName.split(' ')[0].toLowerCase();
+      if (!title.toLowerCase().includes(firstWord)) return;
+    }
 
     const sale = {
       title,
       price,
       date: item.itemCreationDate || new Date().toISOString(),
-      url: item.itemWebUrl,
+      url:  item.itemWebUrl,
       condition: item.condition,
     };
 
@@ -190,7 +229,7 @@ async function fetchEbayListings(cardName, cardNumber, setTotal, condition) {
 
   return {
     ungraded: ungraded.slice(0, 10),
-    graded: graded.slice(0, 10),
+    graded:   graded.slice(0, 10),
   };
 }
 
