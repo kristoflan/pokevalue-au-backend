@@ -43,10 +43,25 @@ async function getEbayToken() {
 const GRADED_KEYWORDS = ['psa', 'bgs', 'cgc', 'ace', 'sgc', 'graded', 'grade'];
 
 // Keywords that indicate junk listings we don't want
+// This covers bulk lots, sealed product, display items, and non-card merch
 const JUNK_KEYWORDS = [
-  'lot', 'bulk', 'bundle', 'collection', 'reprint', 'proxy',
-  'fake', 'custom', 'x10', 'x20', 'x50', '10x', '20x', '50x',
-  'damaged', 'playmat', 'binder', 'sleeve', 'display', 'booster'
+  // Bulk / lots
+  'lot', 'bulk', 'bundle', 'collection', 'x10', 'x20', 'x50', '10x', '20x', '50x',
+  // Fakes / reprints
+  'reprint', 'proxy', 'fake', 'custom',
+  // Sealed product & packaging
+  'booster', 'booster box', 'booster pack', 'display', 'display box',
+  'etb', 'elite trainer', 'tin', 'tray', 'gift box', 'blister',
+  'collection box', 'premium collection', 'special collection',
+  // Extended art trays and promo products
+  'extended art tray', 'extended art box', 'art tray',
+  'promo box', 'promo pack', 'promo tin',
+  // Accessories / non-cards
+  'playmat', 'binder', 'sleeve', 'sleeves', 'deckbox', 'deck box',
+  'album', 'folder', 'portfolio', 'figure', 'plush', 'pin', 'badge',
+  'coin', 'dice', 'token', 'energy bundle', 'card bundle',
+  // Condition flags we never want
+  'damaged', 'heavily played',
 ];
 
 function isGraded(title) {
@@ -140,13 +155,23 @@ async function fetchEbayListings(cardName, cardNumber, setTotal, condition) {
   const isSecretRare   = cardNumber && setTotal && !isNaN(numInt) && !isNaN(totalInt) && numInt > totalInt;
   const hasValidNumber = cardNumber && setTotal && !isNaN(numInt) && !isNaN(totalInt) && numInt <= totalInt;
 
+  // ── Build the search query ───────────────────────────────────────────────
+  // Rule: ALWAYS include the card number in the eBay search for precision.
+  // For secret rares (number > total), include JUST the number (e.g. "161")
+  // because sellers write "Umbreon 161" but rarely write "161/131".
+  // For normal cards, include "number/total" (e.g. "4/102") as sellers
+  // consistently write this format for base/standard cards.
+
   let primaryQuery;
   if (isSecretRare) {
-    primaryQuery = `${cardName} pokemon card`;
-    console.log(`Secret rare detected (${cardNumber}/${setTotal}) — omitting number from query`);
+    // Secret rare: use number only (no /total) — e.g. "Umbreon 161 pokemon card"
+    primaryQuery = `${cardName} ${cardNumber} pokemon card`;
+    console.log(`Secret rare detected (${cardNumber}/${setTotal}) — using number only: ${primaryQuery}`);
   } else if (hasValidNumber) {
+    // Normal card: use full number/total — e.g. "Charizard 4/102 pokemon card"
     primaryQuery = `${cardName} ${cardNumber}/${setTotal} pokemon card`;
   } else {
+    // No number info at all — name only
     primaryQuery = `${cardName} pokemon card`;
   }
 
