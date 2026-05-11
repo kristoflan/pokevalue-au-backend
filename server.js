@@ -30,8 +30,9 @@ async function getEbayToken() {
 // ─── Filtering ────────────────────────────────────────────────────────────────
 const GRADED_KEYWORDS = ['psa', 'bgs', 'cgc', 'ace', 'sgc', 'graded', 'grade'];
 const JUNK_KEYWORDS = [
-  // Bulk / lots
-  'lot', 'bulk', 'bundle', 'x10', 'x20', 'x50', '10x', '20x', '50x',
+  // Bulk / lots / multi-card listings
+  'lot', 'bulk', 'bundle', 'both', 'set of', 'pair of', 'combo', 'x10', 'x20', 'x50', '10x', '20x', '50x',
+  '2 cards', '3 cards', '4 cards', '5 cards', 'full set', 'complete set',
   // Fakes / reprints / custom art
   'reprint', 'proxy', 'fake', 'custom',
   'framed', 'frame', 'canvas', 'print', 'poster', 'art print',
