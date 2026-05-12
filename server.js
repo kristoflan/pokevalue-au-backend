@@ -356,36 +356,48 @@ app.get('/price', async (req, res) => {
 });
 
 // ── Japanese card search proxy ────────────────────────────────────────────────
-// Proxies TCGdex Japanese API calls server-side to avoid browser CORS restrictions.
-// Returns normalised card objects ready for the frontend to render.
 app.get('/jp-search', async (req, res) => {
   const { name } = req.query;
   if (!name) return res.status(400).json({ error: 'name is required' });
 
   try {
-    // Step 1: Search for cards by name
-    const searchRes = await axios.get(`https://api.tcgdex.net/v2/ja/cards`, {
-      params: { name, 'pagination[itemsPerPage]': 24 },
+    // TCGdex uses bracket notation for pagination — build URL manually to avoid encoding issues
+    const searchUrl = `https://api.tcgdex.net/v2/ja/cards?name=${encodeURIComponent(name)}&pagination[itemsPerPage]=24`;
+    console.log('TCGdex search URL:', searchUrl);
+
+    const searchRes = await axios.get(searchUrl, {
       timeout: 15000,
+      headers: { 'Accept': 'application/json' },
     });
 
     const summaries = Array.isArray(searchRes.data) ? searchRes.data : [];
+    console.log(`TCGdex found ${summaries.length} JP cards for "${name}"`);
     if (!summaries.length) return res.json([]);
 
-    // Step 2: Fetch full details for each card in parallel (batch of 24)
+    // Fetch full card details in parallel
     const details = await Promise.all(
       summaries.slice(0, 24).map(card =>
-        axios.get(`https://api.tcgdex.net/v2/ja/cards/${card.id}`, { timeout: 10000 })
+        axios.get(`https://api.tcgdex.net/v2/ja/cards/${card.id}`, {
+          timeout: 10000,
+          headers: { 'Accept': 'application/json' },
+        })
           .then(r => r.data)
-          .catch(() => null)
+          .catch(e => { console.warn(`Failed to fetch card ${card.id}:`, e.message); return null; })
       )
     );
 
     const full = details.filter(Boolean);
+    console.log(`Returning ${full.length} full JP card objects`);
     return res.json(full);
   } catch(err) {
     console.error('JP search error:', err.message);
-    return res.status(500).json({ error: 'Failed to fetch Japanese cards', detail: err.message });
+    console.error('Response data:', err.response?.data);
+    console.error('Response status:', err.response?.status);
+    return res.status(500).json({
+      error: 'Failed to fetch Japanese cards',
+      detail: err.message,
+      status: err.response?.status,
+    });
   }
 });
 
