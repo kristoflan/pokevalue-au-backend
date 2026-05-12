@@ -267,7 +267,7 @@
 <script>
   const BACKEND    = 'https://pokevalue-au-backend.onrender.com';
   const TCG_EN     = 'https://api.pokemontcg.io/v2';
-  const TCG_JP     = 'https://api.tcgdex.net/v2/ja';
+  const TCG_JP     = 'https://www.tcgdex.net/api/v2/ja';
 
   let currentLang  = 'en';
   let activeCond   = 'nm';
@@ -339,8 +339,9 @@
       const data = await res.json();
       const hint = matchedSetName ? ` · set: <span style="color:var(--red);font-weight:600">${matchedSetName}</span>` : '';
       renderResults(data.data || [], hint, 'en');
-    } catch {
-      resultsArea.innerHTML = `<div class="status-msg"><i class="ti ti-wifi-off"></i><strong>Connection error</strong>Check your internet and try again.</div>`;
+    } catch(err) {
+      console.error('JP search error:', err);
+      resultsArea.innerHTML = `<div class="status-msg"><i class="ti ti-wifi-off"></i><strong>Connection error</strong>Check your internet and try again. (${err.message})</div>`;
     }
   }
 
