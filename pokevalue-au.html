@@ -345,27 +345,19 @@
     }
   }
 
-  // ── Japanese search (TCGdex) ──────────────────────────────────────────────
+  // ── Japanese search (via backend proxy — avoids CORS) ────────────────────
   async function searchJapanese(q) {
     try {
-      // TCGdex ja endpoint — search by name, returns array of card summaries
-      const res  = await fetch(`${TCG_JP}/cards?name=${encodeURIComponent(q)}&pagination[itemsPerPage]=24`);
-      if (!res.ok) throw new Error();
+      const res = await fetch(`${BACKEND}/jp-search?name=${encodeURIComponent(q)}`);
+      if (!res.ok) throw new Error(`Backend error ${res.status}`);
       const cards = await res.json();
-
       if (!Array.isArray(cards) || !cards.length) {
-        resultsArea.innerHTML = `<div class="status-msg"><i class="ti ti-mood-sad"></i><strong>No Japanese cards found</strong>Try a different name — you can search in English or Japanese.</div>`;
+        resultsArea.innerHTML = `<div class="status-msg"><i class="ti ti-mood-sad"></i><strong>No Japanese cards found</strong>Try a different name.</div>`;
         return;
       }
-
-      // TCGdex returns summaries — fetch full details for first 24 in parallel (batched)
-      const batch  = cards.slice(0, 24);
-      const details = await Promise.all(
-        batch.map(c => fetch(`${TCG_JP}/cards/${c.id}`).then(r => r.json()).catch(() => null))
-      );
-      const full = details.filter(Boolean);
-      renderResults(full, '', 'jp');
-    } catch {
+      renderResults(cards, '', 'jp');
+    } catch(err) {
+      console.error('JP search error:', err);
       resultsArea.innerHTML = `<div class="status-msg"><i class="ti ti-wifi-off"></i><strong>Connection error</strong>Check your internet and try again.</div>`;
     }
   }
@@ -486,7 +478,7 @@
       const res  = await fetch(`${BACKEND}/price?name=${encodeURIComponent(card.name)}&number=${encodeURIComponent(cardNum)}&total=&isPromo=false&isJapanese=true`);
       const data = await res.json();
 
-      // TCGdex includes cardmarket and tcgplayer pricing on full card objects
+      // Pricing comes from card object (returned by our backend proxy)
       const cm   = card.pricing?.cardmarket || null;
       const tcgp = card.pricing?.tcgplayer  || null;
 

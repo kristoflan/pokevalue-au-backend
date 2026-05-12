@@ -355,4 +355,38 @@ app.get('/price', async (req, res) => {
   }
 });
 
+// ── Japanese card search proxy ────────────────────────────────────────────────
+// Proxies TCGdex Japanese API calls server-side to avoid browser CORS restrictions.
+// Returns normalised card objects ready for the frontend to render.
+app.get('/jp-search', async (req, res) => {
+  const { name } = req.query;
+  if (!name) return res.status(400).json({ error: 'name is required' });
+
+  try {
+    // Step 1: Search for cards by name
+    const searchRes = await axios.get(`https://api.tcgdex.net/v2/ja/cards`, {
+      params: { name, 'pagination[itemsPerPage]': 24 },
+      timeout: 15000,
+    });
+
+    const summaries = Array.isArray(searchRes.data) ? searchRes.data : [];
+    if (!summaries.length) return res.json([]);
+
+    // Step 2: Fetch full details for each card in parallel (batch of 24)
+    const details = await Promise.all(
+      summaries.slice(0, 24).map(card =>
+        axios.get(`https://api.tcgdex.net/v2/ja/cards/${card.id}`, { timeout: 10000 })
+          .then(r => r.data)
+          .catch(() => null)
+      )
+    );
+
+    const full = details.filter(Boolean);
+    return res.json(full);
+  } catch(err) {
+    console.error('JP search error:', err.message);
+    return res.status(500).json({ error: 'Failed to fetch Japanese cards', detail: err.message });
+  }
+});
+
 app.listen(PORT, () => console.log(`PokéValue AU backend running on port ${PORT}`));
