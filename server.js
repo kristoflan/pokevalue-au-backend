@@ -68,19 +68,25 @@ const JUNK_KEYWORDS = [
 // "booster" alone is fine (sellers say "booster holo") but "booster box" = junk.
 function isSealedBox(title) {
   const lower = title.toLowerCase();
+  const hasPromo = lower.includes('promo');
 
-  // Elite Trainer Box as the main product (not just mentioned as source of promo)
-  if (lower.includes('elite trainer box') && !lower.includes('promo')) return true;
-  if (lower.includes('etb') && lower.includes('sealed') && !lower.includes('promo card')) return true;
-  if (lower.includes('etb') && lower.includes('box') && !lower.includes('promo')) return true;
+  // Elite Trainer Box as the main product
+  // If "promo" appears in the title, it's likely a sealed promo card FROM an ETB — allow it
+  if (lower.includes('elite trainer box') && !hasPromo) return true;
+
+  // ETB + sealed: block ONLY if there's no promo mention
+  // "Charmander ETB Black Star Promo SVP044 Sealed" = sealed promo card — allow
+  // "Elite Trainer Box Sealed" = the box itself — block
+  if (lower.includes('etb') && lower.includes('sealed') && !hasPromo) return true;
+  if (lower.includes('etb') && lower.includes('box') && !hasPromo) return true;
 
   // Tin as main product
-  if (lower.includes(' tin ') && !lower.includes('promo')) return true;
-  if (lower.endsWith(' tin') && !lower.includes('promo')) return true;
+  if (lower.includes(' tin ') && !hasPromo) return true;
+  if (lower.endsWith(' tin') && !hasPromo) return true;
 
   // Booster as main product
   if (lower.includes('booster box')) return true;
-  if (lower.includes('booster pack') && !lower.includes('promo')) return true;
+  if (lower.includes('booster pack') && !hasPromo) return true;
 
   return false;
 }
