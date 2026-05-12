@@ -220,9 +220,14 @@ function calculatePrice(sales) {
 async function fetchActiveListings(cardName, cardNumber, setTotal, token, isPromoOverride = false) {
   // Allow frontend to signal promo cards directly
   let { query, isSecret, hasNum, isPromo } = buildQuery(cardName, cardNumber, setTotal);
+  const isJapanese = req.query.isJapanese === 'true';
 
-  // If frontend detected it as a promo or buildQuery detected it, append "promo" to query
-  if (isPromoOverride || isPromo) {
+  // Japanese cards — add "japanese" to search to get JP listings on eBay AU
+  if (isJapanese) {
+    query = `${cardName} ${cardNumber} japanese`.trim();
+    console.log('Japanese card — using query:', query);
+  } else if (isPromoOverride || isPromo) {
+    // Promo cards — add "promo" keyword
     query = `${cardName} ${cardNumber} promo`;
     console.log('Promo card detected — using promo query:', query);
   }

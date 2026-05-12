@@ -7,126 +7,92 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --red: #CC0000;
-      --bg: #f4f4f2;
-      --surface: #ffffff;
-      --surface2: #f0efeb;
-      --border: rgba(0,0,0,0.10);
-      --border-med: rgba(0,0,0,0.20);
-      --text: #1a1a1a;
-      --text-muted: #666660;
-      --text-hint: #999992;
-      --radius-md: 8px;
-      --radius-lg: 12px;
-      --info-bg: #e6f1fb;
-      --info-text: #0c447c;
-      --success-bg: #eaf3de;
-      --success-text: #3b6d11;
-      --warn-bg: #fef3cd;
-      --warn-text: #7d5a00;
+      --red: #CC0000; --bg: #f4f4f2; --surface: #ffffff; --surface2: #f0efeb;
+      --border: rgba(0,0,0,0.10); --border-med: rgba(0,0,0,0.20);
+      --text: #1a1a1a; --text-muted: #666660; --text-hint: #999992;
+      --radius-md: 8px; --radius-lg: 12px;
+      --info-bg: #e6f1fb; --info-text: #0c447c;
+      --success-bg: #eaf3de; --success-text: #3b6d11;
+      --warn-bg: #fef3cd; --warn-text: #7d5a00;
+      --jp: #d4380d;
     }
-
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: var(--bg);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 0 0 80px;
+      background: var(--bg); min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; padding: 0 0 80px;
     }
-
-    .app-shell {
-      width: 100%;
-      max-width: 430px;
-      background: var(--bg);
-      min-height: 100vh;
-    }
+    .app-shell { width: 100%; max-width: 430px; background: var(--bg); min-height: 100vh; }
 
     /* ── Header ── */
     .app-header {
-      background: var(--red);
-      padding: 14px 16px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      position: sticky;
-      top: 0;
-      z-index: 10;
+      padding: 14px 16px; display: flex; align-items: center; gap: 12px;
+      position: sticky; top: 0; z-index: 10;
       box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+      transition: background 0.3s;
     }
+    .app-header.en { background: var(--red); }
+    .app-header.jp { background: var(--jp); }
     .pokeball {
-      width: 34px; height: 34px;
-      background: white;
-      border-radius: 50%;
+      width: 34px; height: 34px; background: white; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-      box-shadow: 0 0 0 3px rgba(255,255,255,0.25);
+      flex-shrink: 0; box-shadow: 0 0 0 3px rgba(255,255,255,0.25);
     }
-    .pokeball-inner {
-      width: 13px; height: 13px;
-      background: var(--red);
-      border-radius: 50%;
-      border: 2.5px solid #222;
-    }
+    .pokeball-inner { width: 13px; height: 13px; border-radius: 50%; border: 2.5px solid #222; transition: background 0.3s; }
+    .app-header.en .pokeball-inner { background: var(--red); }
+    .app-header.jp .pokeball-inner { background: var(--jp); }
+    .header-text { flex: 1; }
     .header-text h1 { font-size: 18px; font-weight: 700; color: white; }
     .header-text span { font-size: 11px; color: rgba(255,255,255,0.68); margin-top: 1px; display: block; }
 
+    /* ── Language toggle ── */
+    .lang-toggle {
+      display: flex; background: rgba(255,255,255,0.2);
+      border-radius: 20px; padding: 3px; gap: 2px; flex-shrink: 0;
+    }
+    .lang-btn {
+      padding: 4px 10px; border-radius: 16px; font-size: 12px; font-weight: 700;
+      border: none; cursor: pointer; transition: all 0.2s; color: rgba(255,255,255,0.7);
+      background: transparent;
+    }
+    .lang-btn.active { background: white; color: var(--red); }
+    .app-header.jp .lang-btn.active { color: var(--jp); }
+
     /* ── Search ── */
-    .search-area {
-      background: var(--surface);
-      padding: 12px 14px 14px;
-      border-bottom: 0.5px solid var(--border);
-    }
-    .search-hint {
-      font-size: 11px;
-      color: var(--text-hint);
-      margin-bottom: 8px;
-    }
-    .search-row { display: flex; gap: 8px; margin-bottom: 10px; }
+    .search-area { background: var(--surface); padding: 12px 14px 14px; border-bottom: 0.5px solid var(--border); }
+    .search-hint { font-size: 11px; color: var(--text-hint); margin-bottom: 8px; }
+    .search-row { display: flex; gap: 8px; }
     .search-row input {
       flex: 1; height: 42px; padding: 0 14px; font-size: 15px;
-      border: 0.5px solid var(--border-med);
-      border-radius: var(--radius-md);
-      background: var(--surface2);
-      color: var(--text); outline: none;
+      border: 0.5px solid var(--border-med); border-radius: var(--radius-md);
+      background: var(--surface2); color: var(--text); outline: none;
       transition: border-color 0.15s, box-shadow 0.15s;
     }
-    .search-row input:focus {
-      border-color: var(--red);
-      box-shadow: 0 0 0 3px rgba(204,0,0,0.1);
-      background: white;
-    }
+    .search-row input:focus { border-color: var(--red); box-shadow: 0 0 0 3px rgba(204,0,0,0.1); background: white; }
     .search-btn {
-      height: 42px; padding: 0 18px;
-      background: var(--red); color: white; border: none;
+      height: 42px; padding: 0 18px; color: white; border: none;
       border-radius: var(--radius-md); font-size: 14px; font-weight: 600;
       cursor: pointer; display: flex; align-items: center; gap: 6px;
-      white-space: nowrap; transition: opacity 0.15s;
+      white-space: nowrap; transition: opacity 0.15s, background 0.3s;
     }
+    .search-btn.en { background: var(--red); }
+    .search-btn.jp { background: var(--jp); }
     .search-btn:active { opacity: 0.82; transform: scale(0.98); }
-    .filter-row { display: flex; gap: 8px; }
-    .filter-row select {
-      flex: 1; height: 34px; padding: 0 10px; font-size: 13px;
-      border: 0.5px solid var(--border);
-      border-radius: var(--radius-md);
-      background: var(--surface2); color: var(--text-muted); outline: none;
+
+    /* ── Language badge ── */
+    .lang-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; margin-top: 8px;
     }
+    .lang-badge.en { background: rgba(204,0,0,0.1); color: var(--red); }
+    .lang-badge.jp { background: rgba(212,56,13,0.1); color: var(--jp); }
 
     /* ── Results ── */
     .results-area { padding: 14px; }
-    .status-msg {
-      text-align: center; padding: 50px 24px 40px;
-      color: var(--text-muted); font-size: 14px; line-height: 1.6;
-    }
+    .status-msg { text-align: center; padding: 50px 24px 40px; color: var(--text-muted); font-size: 14px; line-height: 1.6; }
     .status-msg i { font-size: 44px; display: block; margin-bottom: 14px; opacity: 0.28; color: var(--text); }
     .status-msg strong { display: block; font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
-    .results-header {
-      font-size: 12px; color: var(--text-hint);
-      margin-bottom: 12px; padding: 0 2px; line-height: 1.5;
-    }
+    .results-header { font-size: 12px; color: var(--text-hint); margin-bottom: 12px; padding: 0 2px; line-height: 1.5; }
     .card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
     .card-item {
       background: var(--surface); border-radius: var(--radius-lg);
@@ -136,10 +102,8 @@
     .card-item:active { transform: scale(0.98); }
     .card-item:hover { border-color: var(--border-med); box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
     .card-item.selected { border: 2px solid var(--red); box-shadow: 0 2px 14px rgba(204,0,0,0.18); }
-    .card-img-wrap {
-      aspect-ratio: 3/4; background: var(--surface2);
-      display: flex; align-items: center; justify-content: center; overflow: hidden;
-    }
+    .card-item.selected.jp-selected { border-color: var(--jp); box-shadow: 0 2px 14px rgba(212,56,13,0.18); }
+    .card-img-wrap { aspect-ratio: 3/4; background: var(--surface2); display: flex; align-items: center; justify-content: center; overflow: hidden; }
     .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
     .card-img-wrap .no-img { font-size: 11px; color: var(--text-hint); text-align: center; padding: 12px; }
     .card-img-wrap .no-img i { font-size: 28px; display: block; margin-bottom: 4px; opacity: 0.5; }
@@ -147,238 +111,94 @@
     .card-name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .card-set { font-size: 11px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .card-num { font-size: 11px; color: var(--text-hint); margin-top: 1px; }
-    .card-rarity {
-      display: inline-block; font-size: 10px; font-weight: 500;
-      padding: 2px 7px; border-radius: 4px; margin-top: 5px;
-      background: var(--info-bg); color: var(--info-text);
-    }
+    .card-rarity { display: inline-block; font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 4px; margin-top: 5px; background: var(--info-bg); color: var(--info-text); }
 
     /* ── Skeletons ── */
     .loading-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-    .skeleton {
-      background: var(--surface); border-radius: var(--radius-lg);
-      border: 0.5px solid var(--border); aspect-ratio: 3/5;
-      position: relative; overflow: hidden;
-    }
-    .skeleton::after {
-      content: ''; position: absolute; inset: 0;
-      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.7) 50%, transparent 100%);
-      animation: shimmer 1.4s infinite;
-    }
+    .skeleton { background: var(--surface); border-radius: var(--radius-lg); border: 0.5px solid var(--border); aspect-ratio: 3/5; position: relative; overflow: hidden; }
+    .skeleton::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.7) 50%, transparent 100%); animation: shimmer 1.4s infinite; }
     @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
 
     /* ── Detail panel ── */
-    .detail-panel {
-      background: var(--surface);
-      border-top: 3px solid var(--red);
-      padding: 16px;
-      display: none;
-    }
+    .detail-panel { background: var(--surface); border-top: 3px solid var(--red); padding: 16px; display: none; }
     .detail-panel.visible { display: block; }
+    .detail-panel.jp-mode { border-top-color: var(--jp); }
     .detail-header { display: flex; gap: 14px; margin-bottom: 16px; align-items: flex-start; }
-    .detail-img {
-      width: 88px; flex-shrink: 0;
-      border-radius: 8px; overflow: hidden;
-      background: var(--surface2);
-      border: 0.5px solid var(--border);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
+    .detail-img { width: 88px; flex-shrink: 0; border-radius: 8px; overflow: hidden; background: var(--surface2); border: 0.5px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
     .detail-img img { width: 100%; display: block; }
     .detail-title { font-size: 17px; font-weight: 700; color: var(--text); line-height: 1.3; }
     .detail-sub { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
-    .detail-rarity {
-      display: inline-block; font-size: 11px; font-weight: 500;
-      padding: 2px 8px; border-radius: 4px; margin-top: 6px;
-      background: var(--info-bg); color: var(--info-text);
-    }
+    .detail-rarity { display: inline-block; font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 4px; margin-top: 6px; background: var(--info-bg); color: var(--info-text); }
 
     /* ── Section headers ── */
-    .section-header {
-      display: flex; align-items: center; gap: 9px;
-      padding: 9px 12px; border-radius: var(--radius-md);
-      margin-bottom: 10px; margin-top: 6px;
-      font-size: 13px; font-weight: 700;
-    }
+    .section-header { display: flex; align-items: center; gap: 9px; padding: 9px 12px; border-radius: var(--radius-md); margin-bottom: 10px; margin-top: 6px; font-size: 13px; font-weight: 700; }
     .section-header i { font-size: 16px; flex-shrink: 0; }
     .section-header .sh-sub { font-size: 11px; font-weight: 400; opacity: 0.8; margin-top: 1px; }
     .sh-active  { background: #eff6ff; color: #1e40af; border: 0.5px solid #bfdbfe; }
+    .sh-active.jp  { background: #fff1eb; color: var(--jp); border-color: #fed7c3; }
     .sh-us      { background: #f0f4ff; color: #1d4ed8; border: 0.5px solid #c7d2fe; }
-    .sh-graded  { background: #faf5ff; color: #6b21a8; border: 0.5px solid #e9d5ff; }
+    .sh-cm      { background: #f0fdf4; color: #166534; border: 0.5px solid #bbf7d0; }
     .sh-sold    { background: #fff7ed; color: #9a3412; border: 0.5px solid #fed7aa; }
 
-    /* ── Grading info tooltip ── */
-    .grade-info {
-      background: #f8faff;
-      border: 0.5px solid #c7d2fe;
-      border-radius: var(--radius-md);
-      padding: 10px 12px;
-      margin-bottom: 10px;
-      font-size: 12px;
-      color: var(--text-muted);
-      line-height: 1.5;
-    }
-    .grade-info-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      cursor: pointer;
-      user-select: none;
-    }
-    .grade-info-header span {
-      font-size: 12px;
-      font-weight: 600;
-      color: #4338ca;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    .grade-info-header .toggle-icon {
-      font-size: 14px;
-      color: #4338ca;
-      transition: transform 0.2s;
-    }
+    /* ── Condition tabs ── */
+    .cond-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+    .cond-tab { flex: 1; padding: 7px 0; text-align: center; font-size: 12px; font-weight: 600; border-radius: var(--radius-md); cursor: pointer; border: 0.5px solid var(--border); background: var(--surface2); color: var(--text-muted); transition: all 0.15s; }
+    .cond-tab.active { background: var(--red); color: white; border-color: var(--red); }
+    .cond-tab.active.jp { background: var(--jp); border-color: var(--jp); }
+
+    /* ── Grade info ── */
+    .grade-info { background: #f8faff; border: 0.5px solid #c7d2fe; border-radius: var(--radius-md); padding: 10px 12px; margin-bottom: 10px; font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+    .grade-info-header { display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; }
+    .grade-info-header span { font-size: 12px; font-weight: 600; color: #4338ca; display: flex; align-items: center; gap: 5px; }
+    .grade-info-header .toggle-icon { font-size: 14px; color: #4338ca; transition: transform 0.2s; }
     .grade-info-header .toggle-icon.open { transform: rotate(180deg); }
-    .grade-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 8px;
-      font-size: 11px;
-    }
-    .grade-table th {
-      text-align: left;
-      font-weight: 600;
-      color: var(--text-hint);
-      padding: 3px 6px;
-      border-bottom: 0.5px solid var(--border);
-    }
-    .grade-table td {
-      padding: 4px 6px;
-      border-bottom: 0.5px solid var(--border);
-      color: var(--text-muted);
-    }
+    .grade-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 11px; }
+    .grade-table th { text-align: left; font-weight: 600; color: var(--text-hint); padding: 3px 6px; border-bottom: 0.5px solid var(--border); }
+    .grade-table td { padding: 4px 6px; border-bottom: 0.5px solid var(--border); color: var(--text-muted); }
     .grade-table tr:last-child td { border-bottom: none; }
-    .grade-table .psa-badge {
-      display: inline-block;
-      background: #1d4ed8;
-      color: white;
-      font-size: 10px;
-      font-weight: 700;
-      padding: 1px 6px;
-      border-radius: 4px;
-    }
-    .grade-table .raw-badge {
-      display: inline-block;
-      background: var(--success-bg);
-      color: var(--success-text);
-      font-size: 10px;
-      font-weight: 600;
-      padding: 1px 6px;
-      border-radius: 4px;
-    }
+    .grade-table .psa-badge { display: inline-block; background: #1d4ed8; color: white; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; }
+    .grade-table .raw-badge { display: inline-block; background: var(--success-bg); color: var(--success-text); font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 4px; }
     .grade-info-body { display: none; }
     .grade-info-body.open { display: block; }
 
-    /* ── Condition tabs ── */
-    .cond-tabs {
-      display: flex; gap: 6px; margin-bottom: 10px;
-    }
-    .cond-tab {
-      flex: 1; padding: 7px 0; text-align: center;
-      font-size: 12px; font-weight: 600;
-      border-radius: var(--radius-md);
-      cursor: pointer; border: 0.5px solid var(--border);
-      background: var(--surface2); color: var(--text-muted);
-      transition: all 0.15s;
-    }
-    .cond-tab.active { background: var(--red); color: white; border-color: var(--red); }
-
     /* ── Price box ── */
-    .price-box {
-      background: var(--surface2);
-      border-radius: var(--radius-md);
-      padding: 14px;
-      margin-bottom: 12px;
-      border: 0.5px solid var(--border);
-    }
+    .price-box { background: var(--surface2); border-radius: var(--radius-md); padding: 14px; margin-bottom: 12px; border: 0.5px solid var(--border); }
     .price-main { font-size: 32px; font-weight: 700; color: var(--text); line-height: 1; margin-bottom: 4px; }
     .price-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
-    .trend-badge {
-      display: inline-flex; align-items: center; gap: 4px;
-      font-size: 11px; font-weight: 600;
-      padding: 3px 9px; border-radius: 20px; margin-bottom: 10px;
-    }
+    .trend-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; margin-bottom: 10px; }
     .trend-up   { background: var(--success-bg); color: var(--success-text); }
     .trend-flat { background: var(--surface); color: var(--text-hint); border: 0.5px solid var(--border); }
     .price-stats { display: flex; gap: 6px; flex-wrap: wrap; }
-    .stat-chip {
-      background: var(--surface); border: 0.5px solid var(--border);
-      border-radius: 6px; padding: 5px 9px;
-      font-size: 11px; color: var(--text-muted); text-align: center; min-width: 56px;
-    }
+    .stat-chip { background: var(--surface); border: 0.5px solid var(--border); border-radius: 6px; padding: 5px 9px; font-size: 11px; color: var(--text-muted); text-align: center; min-width: 56px; }
     .stat-chip strong { display: block; font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 1px; }
 
-    /* ── Listings scroll ── */
+    /* ── Listings ── */
     .listings-label { font-size: 11px; font-weight: 600; color: var(--text-hint); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 7px; margin-top: 12px; }
     .listings-scroll { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
     .listings-scroll::-webkit-scrollbar { height: 3px; }
     .listings-scroll::-webkit-scrollbar-thumb { background: var(--border-med); border-radius: 2px; }
-    .listing-chip {
-      flex-shrink: 0; min-width: 70px;
-      background: var(--surface); border: 0.5px solid var(--border);
-      border-radius: 8px; padding: 6px 10px;
-      text-align: center; text-decoration: none;
-      transition: border-color 0.15s;
-    }
+    .listing-chip { flex-shrink: 0; min-width: 70px; background: var(--surface); border: 0.5px solid var(--border); border-radius: 8px; padding: 6px 10px; text-align: center; text-decoration: none; transition: border-color 0.15s; }
     .listing-chip:hover { border-color: var(--red); }
     .listing-chip .lc-price { font-size: 13px; font-weight: 700; color: var(--text); }
     .listing-chip .lc-label { font-size: 10px; color: var(--text-hint); margin-top: 1px; }
 
-    /* ── No data ── */
-    .no-data {
-      background: var(--warn-bg); border-radius: var(--radius-md);
-      padding: 11px 13px; margin-bottom: 12px;
-      font-size: 13px; color: var(--warn-text);
-      border: 0.5px solid rgba(0,0,0,0.07);
-    }
-
-    /* ── Loading spinner ── */
-    .price-loading {
-      background: var(--surface2); border-radius: var(--radius-md);
-      padding: 18px; margin-bottom: 12px;
-      display: flex; align-items: center; gap: 12px;
-      color: var(--text-muted); font-size: 13px;
-      border: 0.5px solid var(--border);
-    }
-    .spinner {
-      width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0;
-      border: 2px solid var(--border); border-top-color: var(--red);
-      animation: spin 0.8s linear infinite;
-    }
+    /* ── No data / loading ── */
+    .no-data { background: var(--warn-bg); border-radius: var(--radius-md); padding: 11px 13px; margin-bottom: 12px; font-size: 13px; color: var(--warn-text); border: 0.5px solid rgba(0,0,0,0.07); }
+    .price-loading { background: var(--surface2); border-radius: var(--radius-md); padding: 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px; color: var(--text-muted); font-size: 13px; border: 0.5px solid var(--border); }
+    .spinner { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; border: 2px solid var(--border); border-top-color: var(--red); animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ── Buttons ── */
     .btn-row { display: flex; gap: 8px; margin-top: 4px; }
-    .btn {
-      flex: 1; display: flex; align-items: center; justify-content: center;
-      gap: 7px; padding: 11px; border: none; border-radius: var(--radius-md);
-      font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none;
-      transition: opacity 0.15s;
-    }
+    .btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px; padding: 11px; border: none; border-radius: var(--radius-md); font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; transition: opacity 0.15s; }
     .btn:active { opacity: 0.82; transform: scale(0.98); }
-    .btn-red   { background: var(--red); color: white; }
-    .btn-blue  { background: #1d4ed8; color: white; }
+    .btn-red  { background: var(--red); color: white; }
+    .btn-jp   { background: var(--jp); color: white; }
+    .btn-blue { background: #1d4ed8; color: white; }
     .btn-ghost { background: var(--surface2); color: var(--text-muted); border: 0.5px solid var(--border); }
 
     /* ── Toast ── */
-    .toast {
-      position: fixed; bottom: 24px; left: 50%;
-      transform: translateX(-50%) translateY(90px);
-      background: #1a1a1a; color: white;
-      padding: 10px 18px; border-radius: var(--radius-md);
-      font-size: 13px; transition: transform 0.3s;
-      z-index: 100; white-space: nowrap;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-    }
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(90px); background: #1a1a1a; color: white; padding: 10px 18px; border-radius: var(--radius-md); font-size: 13px; transition: transform 0.3s; z-index: 100; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
     .toast.show { transform: translateX(-50%) translateY(0); }
   </style>
 </head>
@@ -386,36 +206,26 @@
 <div class="app-shell">
 
   <!-- Header -->
-  <div class="app-header">
-    <div class="pokeball"><div class="pokeball-inner"></div></div>
+  <div class="app-header en" id="appHeader">
+    <div class="pokeball"><div class="pokeball-inner" id="pokeballInner"></div></div>
     <div class="header-text">
       <h1>PokéValue AU</h1>
-      <span>Australian Pokémon card prices</span>
+      <span id="headerSub">Australian Pokémon card prices</span>
+    </div>
+    <div class="lang-toggle">
+      <button class="lang-btn active" id="btnEN" onclick="setLang('en')">EN</button>
+      <button class="lang-btn" id="btnJP" onclick="setLang('jp')">JP</button>
     </div>
   </div>
 
   <!-- Search -->
   <div class="search-area">
-    <div class="search-hint">Search by name + set — e.g. "Charizard Base" or "Umbreon Prismatic"</div>
+    <div class="search-hint" id="searchHint">Search by name — e.g. "Charizard" or "Umbreon"</div>
     <div class="search-row">
       <input type="text" id="searchInput" placeholder="Card name..." autocomplete="off" />
-      <button class="search-btn" onclick="doSearch()">
+      <button class="search-btn en" id="searchBtn" onclick="doSearch()">
         <i class="ti ti-search"></i> Search
       </button>
-    </div>
-    <div class="filter-row">
-      <select id="setFilter"><option value="">All sets</option></select>
-      <select id="rarityFilter">
-        <option value="">All rarities</option>
-        <option value="Common">Common</option>
-        <option value="Uncommon">Uncommon</option>
-        <option value="Rare">Rare</option>
-        <option value="Rare Holo">Rare Holo</option>
-        <option value="Rare Ultra">Ultra Rare</option>
-        <option value="Rare Secret">Secret Rare</option>
-        <option value="Amazing Rare">Amazing Rare</option>
-        <option value="LEGEND">LEGEND</option>
-      </select>
     </div>
   </div>
 
@@ -424,13 +234,12 @@
     <div class="status-msg">
       <i class="ti ti-cards"></i>
       <strong>Find any Pokémon card</strong>
-      Search by name, or include the set — "Gengar Phantom Forces", "Pikachu Base Set", "Umbreon Prismatic".
+      Use the <strong>EN</strong> / <strong>JP</strong> toggle to switch between English and Japanese cards, then search by name.
     </div>
   </div>
 
   <!-- Detail panel -->
   <div class="detail-panel" id="detailPanel">
-
     <div class="detail-header">
       <div class="detail-img"><img id="detailImg" src="" alt="" /></div>
       <div>
@@ -438,12 +247,11 @@
         <div class="detail-sub" id="detailSet"></div>
         <div class="detail-sub" id="detailNum"></div>
         <div class="detail-rarity" id="detailRarity"></div>
+        <span class="lang-badge en" id="detailLangBadge"><i class="ti ti-language"></i> English</span>
       </div>
     </div>
-
     <div id="pricingSection"></div>
-
-    <div class="btn-row">
+    <div class="btn-row" id="ebayBtnRow">
       <a class="btn btn-red" id="ebayActiveBtn" href="#" target="_blank">
         <i class="ti ti-tag"></i> Active listings
       </a>
@@ -451,15 +259,18 @@
         <i class="ti ti-checklist"></i> Sold listings
       </a>
     </div>
-
   </div>
 
 </div>
 <div class="toast" id="toast"></div>
 
 <script>
-  const TCG_API = 'https://api.pokemontcg.io/v2';
-  const BACKEND = 'https://pokevalue-au-backend.onrender.com';
+  const BACKEND    = 'https://pokevalue-au-backend.onrender.com';
+  const TCG_EN     = 'https://api.pokemontcg.io/v2';
+  const TCG_JP     = 'https://api.tcgdex.net/v2/ja';
+
+  let currentLang  = 'en';
+  let activeCond   = 'nm';
 
   const searchInput = document.getElementById('searchInput');
   const resultsArea = document.getElementById('resultsArea');
@@ -474,199 +285,246 @@
     setTimeout(() => t.classList.remove('show'), 3000);
   }
 
-  // ── Set-aware fuzzy search ────────────────────────────────────────────────
-  let ALL_SETS = [];
+  // ── Language toggle ───────────────────────────────────────────────────────
+  function setLang(lang) {
+    currentLang = lang;
+    const isJP  = lang === 'jp';
 
-  const STOP_WORDS = new Set([
-    'card','cards','pokemon','pokémon','holo','rare','ex','gx','vmax','vstar',
-    'shiny','full','art','alt','secret','trainer','energy','item','supporter',
-    'stadium','the','and','of','in','a','an','for','with','set','series',
-  ]);
+    document.getElementById('appHeader').className    = `app-header ${lang}`;
+    document.getElementById('searchBtn').className    = `search-btn ${lang}`;
+    document.getElementById('btnEN').classList.toggle('active', !isJP);
+    document.getElementById('btnJP').classList.toggle('active', isJP);
+    document.getElementById('headerSub').textContent  = isJP
+      ? 'Japanese Pokémon card prices · AU market'
+      : 'Australian Pokémon card prices';
+    document.getElementById('searchHint').textContent = isJP
+      ? 'Search Japanese cards by name — e.g. "リザードン" or "Charizard"'
+      : 'Search by name — e.g. "Charizard" or "Umbreon"';
+    searchInput.placeholder = isJP ? 'Japanese card name...' : 'Card name...';
 
-  function parseSearchQuery(raw) {
-    if (!ALL_SETS.length) return { namePart: raw.trim(), detectedSet: null, matchedSetName: null };
-
-    const words = raw.trim().toLowerCase().split(/\s+/).filter(w => w.length > 1 && !STOP_WORDS.has(w));
-    let bestSet = null, bestScore = 0, bestMatchedWords = [];
-
-    for (const set of ALL_SETS) {
-      const combined = set.name.toLowerCase() + ' ' + (set.series || '').toLowerCase();
-      let score = 0;
-      const matched = [];
-      for (const word of words) {
-        if (combined.includes(word)) { score += word.length; matched.push(word); }
-      }
-      if (matched.length > 1) score += matched.length * 3;
-      if (score > bestScore) { bestScore = score; bestSet = set; bestMatchedWords = matched; }
-    }
-
-    if (bestScore < 4 || !bestSet) return { namePart: raw.trim(), detectedSet: null, matchedSetName: null };
-
-    let namePart = raw.trim();
-    for (const word of bestMatchedWords) {
-      namePart = namePart.replace(new RegExp(`\\b${word}\\b`, 'gi'), '');
-    }
-    namePart = namePart.trim().replace(/\s+/g, ' ') || raw.trim();
-
-    return { namePart, detectedSet: bestSet, matchedSetName: bestSet.name };
+    // Clear results when switching language
+    resultsArea.innerHTML = `<div class="status-msg">
+      <i class="ti ti-cards"></i>
+      <strong>${isJP ? 'Search Japanese cards' : 'Find any Pokémon card'}</strong>
+      ${isJP ? 'Search by English or Japanese name to find Japanese card editions.' : 'Use the EN / JP toggle to switch between English and Japanese cards, then search by name.'}
+    </div>`;
+    detailPanel.classList.remove('visible');
   }
 
-  async function findSetFallback(words) {
-    for (const word of words) {
-      if (word.length < 4 || STOP_WORDS.has(word)) continue;
-      try {
-        const res = await fetch(`${TCG_API}/sets?q=name:"${word}*"&pageSize=5`);
-        const data = await res.json();
-        if (data.data?.length) return data.data[0];
-      } catch(e) {}
-    }
-    return null;
-  }
-
+  // ── Search ────────────────────────────────────────────────────────────────
   async function doSearch() {
-    const raw = searchInput.value.trim();
-    if (!raw) { showToast('Enter a card name to search'); return; }
+    const q = searchInput.value.trim();
+    if (!q) { showToast('Enter a card name to search'); return; }
 
     resultsArea.innerHTML = '<div class="loading-grid">' + Array(6).fill('<div class="skeleton"></div>').join('') + '</div>';
     detailPanel.classList.remove('visible');
 
-    const setDropdown = document.getElementById('setFilter').value;
-    let namePart = raw.trim(), detectedSet = null, matchedSetName = null;
-
-    if (!setDropdown) {
-      if (ALL_SETS.length) {
-        const p = parseSearchQuery(raw);
-        namePart = p.namePart; detectedSet = p.detectedSet; matchedSetName = p.matchedSetName;
-      } else {
-        const words = raw.toLowerCase().split(/\s+/);
-        const fb = await findSetFallback(words);
-        if (fb) {
-          detectedSet = fb; matchedSetName = fb.name;
-          const sw = fb.name.toLowerCase().split(/\s+/);
-          namePart = words.filter(w => !sw.some(s => s.startsWith(w) || w.startsWith(s))).join(' ').trim() || raw.trim();
-        }
-      }
+    if (currentLang === 'jp') {
+      await searchJapanese(q);
+    } else {
+      await searchEnglish(q);
     }
+  }
 
+  // ── English search (pokemontcg.io) ───────────────────────────────────────
+  async function searchEnglish(q) {
+    // Smart set detection from query
+    const { namePart, detectedSet, matchedSetName } = parseSearchQuery(q);
     let query = `name:"${namePart}*"`;
-    if (setDropdown)      query += ` set.id:${setDropdown}`;
-    else if (detectedSet) query += ` set.id:${detectedSet.id}`;
-    const rarity = document.getElementById('rarityFilter').value;
-    if (rarity) query += ` rarity:"${rarity}"`;
+    if (detectedSet) query += ` set.id:${detectedSet.id}`;
 
     try {
-      const res = await fetch(`${TCG_API}/cards?q=${encodeURIComponent(query)}&pageSize=24&orderBy=-set.releaseDate`);
+      const res  = await fetch(`${TCG_EN}/cards?q=${encodeURIComponent(query)}&pageSize=24&orderBy=-set.releaseDate`);
       if (!res.ok) throw new Error();
       const data = await res.json();
-      const hint = matchedSetName && !setDropdown
-        ? ` · set: <span style="color:var(--red);font-weight:600">${matchedSetName}</span>` : '';
-      renderResults(data.data || [], hint);
+      const hint = matchedSetName ? ` · set: <span style="color:var(--red);font-weight:600">${matchedSetName}</span>` : '';
+      renderResults(data.data || [], hint, 'en');
     } catch {
       resultsArea.innerHTML = `<div class="status-msg"><i class="ti ti-wifi-off"></i><strong>Connection error</strong>Check your internet and try again.</div>`;
     }
   }
 
-  function renderResults(cards, hint = '') {
+  // ── Japanese search (TCGdex) ──────────────────────────────────────────────
+  async function searchJapanese(q) {
+    try {
+      // TCGdex ja endpoint — search by name, returns array of card summaries
+      const res  = await fetch(`${TCG_JP}/cards?name=${encodeURIComponent(q)}&pagination[itemsPerPage]=24`);
+      if (!res.ok) throw new Error();
+      const cards = await res.json();
+
+      if (!Array.isArray(cards) || !cards.length) {
+        resultsArea.innerHTML = `<div class="status-msg"><i class="ti ti-mood-sad"></i><strong>No Japanese cards found</strong>Try a different name — you can search in English or Japanese.</div>`;
+        return;
+      }
+
+      // TCGdex returns summaries — fetch full details for first 24 in parallel (batched)
+      const batch  = cards.slice(0, 24);
+      const details = await Promise.all(
+        batch.map(c => fetch(`${TCG_JP}/cards/${c.id}`).then(r => r.json()).catch(() => null))
+      );
+      const full = details.filter(Boolean);
+      renderResults(full, '', 'jp');
+    } catch {
+      resultsArea.innerHTML = `<div class="status-msg"><i class="ti ti-wifi-off"></i><strong>Connection error</strong>Check your internet and try again.</div>`;
+    }
+  }
+
+  // ── Render results (handles both EN and JP card shapes) ──────────────────
+  function renderResults(cards, hint, lang) {
     if (!cards.length) {
-      resultsArea.innerHTML = `<div class="status-msg"><i class="ti ti-mood-sad"></i><strong>No cards found</strong>Try a different name or remove filters.</div>`;
+      resultsArea.innerHTML = `<div class="status-msg"><i class="ti ti-mood-sad"></i><strong>No cards found</strong>Try a different name.</div>`;
       return;
     }
-    resultsArea.innerHTML = `<div class="results-header">${cards.length} card${cards.length !== 1 ? 's' : ''} found${hint} — tap to see pricing</div>`;
+
+    resultsArea.innerHTML = `<div class="results-header">${cards.length} card${cards.length !== 1 ? 's' : ''} found${hint} — tap to see AU pricing</div>`;
     const grid = document.createElement('div');
     grid.className = 'card-grid';
+
     cards.forEach(card => {
-      const el = document.createElement('div');
+      const el    = document.createElement('div');
       el.className = 'card-item';
-      const img = card.images?.small || '';
+
+      // Normalise EN vs JP card shape
+      const name   = card.name || '—';
+      const setName = lang === 'en' ? (card.set?.name || '') : (card.set?.name || card.set || '');
+      const num    = lang === 'en' ? (card.number || '?') : (card.localId || card.number || '?');
+      const rarity = lang === 'en' ? card.rarity : (card.rarity || '');
+      const imgSrc = lang === 'en'
+        ? (card.images?.small || '')
+        : (card.image ? `${card.image}/low.webp` : '');
+
       el.innerHTML = `
         <div class="card-img-wrap">
-          ${img ? `<img src="${img}" alt="${card.name}" loading="lazy" />` : `<div class="no-img"><i class="ti ti-photo-off"></i>No image</div>`}
+          ${imgSrc ? `<img src="${imgSrc}" alt="${name}" loading="lazy" />` : `<div class="no-img"><i class="ti ti-photo-off"></i>No image</div>`}
         </div>
         <div class="card-info">
-          <div class="card-name">${card.name}</div>
-          <div class="card-set">${card.set?.name || ''}</div>
-          <div class="card-num">#${card.number || '?'} · ${card.supertype || ''}</div>
-          ${card.rarity ? `<div class="card-rarity">${card.rarity}</div>` : ''}
+          <div class="card-name">${name}</div>
+          <div class="card-set">${setName}</div>
+          <div class="card-num">#${num} · ${lang === 'en' ? (card.supertype || '') : 'Japanese'}</div>
+          ${rarity ? `<div class="card-rarity">${rarity}</div>` : ''}
         </div>`;
-      el.addEventListener('click', () => selectCard(card, el));
+      el.addEventListener('click', () => lang === 'en' ? selectCardEN(card, el) : selectCardJP(card, el));
       grid.appendChild(el);
     });
+
     resultsArea.appendChild(grid);
   }
 
-  // ── Card selected ──────────────────────────────────────────────────────────
-  async function selectCard(card, el) {
-    document.querySelectorAll('.card-item').forEach(c => c.classList.remove('selected'));
+  // ── Select English card ───────────────────────────────────────────────────
+  async function selectCardEN(card, el) {
+    document.querySelectorAll('.card-item').forEach(c => c.classList.remove('selected', 'jp-selected'));
     el.classList.add('selected');
 
-    document.getElementById('detailImg').src = card.images?.large || card.images?.small || '';
-    document.getElementById('detailImg').alt = card.name;
+    document.getElementById('detailImg').src         = card.images?.large || card.images?.small || '';
     document.getElementById('detailName').textContent = card.name;
-    document.getElementById('detailSet').textContent = card.set?.name || '';
-    document.getElementById('detailNum').textContent = `#${card.number || '?'} · ${card.set?.series || ''}`;
-    document.getElementById('detailRarity').textContent = card.rarity || 'Unknown rarity';
+    document.getElementById('detailSet').textContent  = card.set?.name || '';
+    document.getElementById('detailNum').textContent  = `#${card.number || '?'} · ${card.set?.series || ''}`;
+    document.getElementById('detailRarity').textContent = card.rarity || '';
+    document.getElementById('detailPanel').classList.remove('jp-mode');
 
-    // Build eBay AU URLs — active and sold
-    const setNameQ  = (card.set?.name || '').toLowerCase();
-    const isPromoQ  = setNameQ.includes('promo') || setNameQ.includes('black star') || /[a-zA-Z]/.test(card.number || '');
-    const totalQ    = card.set?.printedTotal || card.set?.total || '';
-    const numPartQ  = isPromoQ || parseInt(totalQ, 10) >= 200
-      ? card.number || ''
-      : `${card.number || ''}/${totalQ}`;
-    const promoTermQ = isPromoQ ? 'promo' : '';
-    const q = encodeURIComponent(`${card.name} ${numPartQ} ${promoTermQ} pokemon`.trim());
+    const badge = document.getElementById('detailLangBadge');
+    badge.className = 'lang-badge en';
+    badge.innerHTML = '<i class="ti ti-language"></i> English';
+
+    const numPart  = buildEbayNum(card.number, card.set?.printedTotal || card.set?.total, false);
+    const q        = encodeURIComponent(`${card.name} ${numPart}`.trim());
     document.getElementById('ebayActiveBtn').href = `https://www.ebay.com.au/sch/i.html?_nkw=${q}&_sop=10&LH_PrefLoc=1`;
-    document.getElementById('ebaySoldBtn').href   = `https://www.ebay.com.au/sch/i.html?_nkw=${q}&LH_Sold=1&LH_Complete=1&LH_ItemCondition=3&_sop=13&_fsradio=&LH_PrefLoc=1`;
+    document.getElementById('ebaySoldBtn').href   = `https://www.ebay.com.au/sch/i.html?_nkw=${q}&LH_Sold=1&LH_Complete=1&LH_ItemCondition=3&_sop=13&LH_PrefLoc=1`;
+    document.getElementById('ebayActiveBtn').className = 'btn btn-red';
 
-    // Extract TCGPlayer data already in API response
     const tcgp = card.tcgplayer?.prices ? {
-      url: card.tcgplayer?.url || null,
-      updatedAt: card.tcgplayer?.updatedAt || null,
-      holofoil:            card.tcgplayer.prices.holofoil            || null,
-      normal:              card.tcgplayer.prices.normal              || null,
-      reverseHolofoil:     card.tcgplayer.prices.reverseHolofoil     || null,
-      firstEditionHolofoil:card.tcgplayer.prices['1stEditionHolofoil']|| null,
-      firstEditionNormal:  card.tcgplayer.prices['1stEditionNormal'] || null,
+      url: card.tcgplayer?.url,
+      updatedAt: card.tcgplayer?.updatedAt,
+      holofoil:             card.tcgplayer.prices.holofoil             || null,
+      normal:               card.tcgplayer.prices.normal               || null,
+      reverseHolofoil:      card.tcgplayer.prices.reverseHolofoil      || null,
+      firstEditionHolofoil: card.tcgplayer.prices['1stEditionHolofoil']|| null,
+      firstEditionNormal:   card.tcgplayer.prices['1stEditionNormal']  || null,
     } : null;
 
-    document.getElementById('pricingSection').innerHTML = `
-      <div class="price-loading"><div class="spinner"></div>Fetching eBay AU prices...</div>`;
-    detailPanel.classList.add('visible');
-    detailPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    showPricingLoader();
 
+    const isPromo = isPromoCard(card.set?.name || '', card.number || '');
     try {
-      const number    = card.number || '';
-      const total     = card.set?.printedTotal || card.set?.total || '';
-      const setName   = (card.set?.name || '').toLowerCase();
-      const supertype = (card.supertype || '').toLowerCase();
-
-      // Detect promo cards:
-      // 1. Set name contains "promo" or "black star"
-      // 2. Card number contains letters (SWSH001, SM01 etc.)
-      // 3. Supertype is "Trainer" or "Energy" with large set totals
-      const isPromo = setName.includes('promo') ||
-                      setName.includes('black star') ||
-                      /[a-zA-Z]/.test(number) ||
-                      (parseInt(total, 10) >= 200 && !setName.includes('scarlet') && !setName.includes('sword') && !setName.includes('sun') && !setName.includes('xy') && !setName.includes('black'));
-
-      const res = await fetch(`${BACKEND}/price?name=${encodeURIComponent(card.name)}&number=${encodeURIComponent(number)}&total=${encodeURIComponent(total)}&isPromo=${isPromo}`);
-      if (!res.ok) throw new Error();
+      const res  = await fetch(`${BACKEND}/price?name=${encodeURIComponent(card.name)}&number=${encodeURIComponent(card.number || '')}&total=${encodeURIComponent(card.set?.printedTotal || card.set?.total || '')}&isPromo=${isPromo}`);
       const data = await res.json();
-      renderPricing(data, tcgp);
+      renderPricingEN(data, tcgp, card.rarity || '', card.set?.name || '');
     } catch {
-      document.getElementById('pricingSection').innerHTML = `
-        <div class="no-data">⚠️ Could not fetch eBay AU pricing. Check your connection and try again.</div>`;
+      document.getElementById('pricingSection').innerHTML = `<div class="no-data">⚠️ Could not fetch eBay AU pricing. Check your connection.</div>`;
     }
   }
 
-  // ── Render pricing ─────────────────────────────────────────────────────────
-  let activeCond = 'nm'; // tracks which condition tab is selected
+  // ── Select Japanese card ──────────────────────────────────────────────────
+  async function selectCardJP(card, el) {
+    document.querySelectorAll('.card-item').forEach(c => c.classList.remove('selected', 'jp-selected'));
+    el.classList.add('selected', 'jp-selected');
 
+    const imgSrc = card.image ? `${card.image}/high.webp` : '';
+    document.getElementById('detailImg').src          = imgSrc;
+    document.getElementById('detailName').textContent  = card.name || '—';
+    document.getElementById('detailSet').textContent   = card.set?.name || card.set || '';
+    document.getElementById('detailNum').textContent   = `#${card.localId || card.number || '?'} · Japanese`;
+    document.getElementById('detailRarity').textContent = card.rarity || '';
+    document.getElementById('detailPanel').classList.add('jp-mode');
+
+    const badge = document.getElementById('detailLangBadge');
+    badge.className = 'lang-badge jp';
+    badge.innerHTML = '<i class="ti ti-language"></i> 日本語 Japanese';
+
+    // eBay AU search for Japanese version
+    const cardNum = card.localId || card.number || '';
+    const q = encodeURIComponent(`${card.name} ${cardNum} japanese pokemon`.trim());
+    document.getElementById('ebayActiveBtn').href = `https://www.ebay.com.au/sch/i.html?_nkw=${q}&_sop=10&LH_PrefLoc=1`;
+    document.getElementById('ebaySoldBtn').href   = `https://www.ebay.com.au/sch/i.html?_nkw=${q}&LH_Sold=1&LH_Complete=1&_sop=13&LH_PrefLoc=1`;
+    document.getElementById('ebayActiveBtn').className = 'btn btn-jp';
+
+    showPricingLoader();
+
+    try {
+      // Fetch AU eBay pricing with japanese flag
+      const res  = await fetch(`${BACKEND}/price?name=${encodeURIComponent(card.name)}&number=${encodeURIComponent(cardNum)}&total=&isPromo=false&isJapanese=true`);
+      const data = await res.json();
+
+      // TCGdex includes cardmarket and tcgplayer pricing on full card objects
+      const cm   = card.pricing?.cardmarket || null;
+      const tcgp = card.pricing?.tcgplayer  || null;
+
+      renderPricingJP(data, cm, tcgp);
+    } catch {
+      document.getElementById('pricingSection').innerHTML = `<div class="no-data">⚠️ Could not fetch eBay AU pricing. Check your connection.</div>`;
+    }
+  }
+
+  function showPricingLoader() {
+    document.getElementById('pricingSection').innerHTML = `<div class="price-loading"><div class="spinner"></div>Fetching eBay AU prices...</div>`;
+    detailPanel.classList.add('visible');
+    detailPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function isPromoCard(setName, cardNumber) {
+    return setName.toLowerCase().includes('promo') ||
+           setName.toLowerCase().includes('black star') ||
+           /[a-zA-Z]/.test(cardNumber);
+  }
+
+  function buildEbayNum(number, total, isJP) {
+    if (!number) return '';
+    const num   = parseInt(number, 10);
+    const tot   = parseInt(total,  10);
+    const isSecret = total && !isNaN(num) && !isNaN(tot) && num > tot;
+    const isLarge  = total && !isNaN(tot) && tot >= 200;
+    if (isJP || isSecret || isLarge || /[a-zA-Z]/.test(number)) return number;
+    if (total && !isNaN(num) && !isNaN(tot)) return `${number}/${total}`;
+    return number;
+  }
+
+  // ── Price block builder ───────────────────────────────────────────────────
   function priceBlock(data) {
     if (!data) return `<div class="no-data">No listings found for this condition right now.</div>`;
     const trend = data.isTrending
       ? `<span class="trend-badge trend-up"><i class="ti ti-trending-up"></i> Trending up · using latest</span>`
-      : `<span class="trend-badge trend-flat"><i class="ti ti-minus"></i> Stable market · using average</span>`;
+      : `<span class="trend-badge trend-flat"><i class="ti ti-minus"></i> Stable · using average</span>`;
     let html = `
       <div class="price-box">
         <div class="price-main">A$${data.recommendedPrice.toFixed(2)}</div>
@@ -674,7 +532,7 @@
         ${trend}
         <div class="price-stats">
           <div class="stat-chip"><strong>A$${data.lowest.toFixed(2)}</strong>Low</div>
-          <div class="stat-chip"><strong>A$${data.average.toFixed(2)}</strong>Average</div>
+          <div class="stat-chip"><strong>A$${data.average.toFixed(2)}</strong>Avg</div>
           <div class="stat-chip"><strong>A$${data.highest.toFixed(2)}</strong>High</div>
           <div class="stat-chip"><strong>A$${data.latest.toFixed(2)}</strong>Latest</div>
         </div>
@@ -692,36 +550,29 @@
     return html;
   }
 
-  function renderPricing(data, tcgp) {
+  // ── Render English pricing ────────────────────────────────────────────────
+  function renderPricingEN(data, tcgp, rarity, setName) {
     const section = document.getElementById('pricingSection');
     const active  = data.active || {};
     const hasMint = !!active.mint;
     const hasNM   = !!active.nm;
 
-    // ── Condition tabs + active listings ─────────────────────────────────
     let html = `
       <div class="section-header sh-active">
         <i class="ti ti-tag"></i>
-        <div>
-          <div>Current Asking Prices · eBay AU</div>
-          <div class="sh-sub">Active listings — what sellers are asking right now</div>
-        </div>
+        <div><div>Current Asking Prices · eBay AU</div><div class="sh-sub">Active listings — what sellers are asking right now</div></div>
       </div>`;
 
     if (hasMint || hasNM) {
-      // Build tabs
       const showBoth = hasMint && hasNM;
       if (showBoth) {
-        html += `
-          <div class="cond-tabs" id="condTabs">
-            <div class="cond-tab ${activeCond === 'nm'   ? 'active' : ''}" onclick="switchCond('nm')">Near Mint (NM)</div>
-            <div class="cond-tab ${activeCond === 'mint' ? 'active' : ''}" onclick="switchCond('mint')">Mint (M)</div>
-          </div>`;
+        html += `<div class="cond-tabs" id="condTabs">
+          <div class="cond-tab ${activeCond === 'nm' ? 'active' : ''}" onclick="switchCond('nm')">Near Mint (NM)</div>
+          <div class="cond-tab ${activeCond === 'mint' ? 'active' : ''}" onclick="switchCond('mint')">Mint (M)</div>
+        </div>`;
       } else {
         activeCond = hasMint ? 'mint' : 'nm';
       }
-
-      // Grading equivalence guide
       html += `
         <div class="grade-info">
           <div class="grade-info-header" onclick="toggleGradeInfo()">
@@ -729,226 +580,242 @@
             <i class="ti ti-chevron-down toggle-icon" id="gradeToggleIcon"></i>
           </div>
           <div class="grade-info-body" id="gradeInfoBody">
-            <p style="margin-top:8px;margin-bottom:6px;font-size:11px;color:var(--text-muted);">
-              Sellers describe raw cards differently — use this guide to understand what condition roughly equates to which PSA grade.
-            </p>
+            <p style="margin-top:8px;margin-bottom:6px;font-size:11px;color:var(--text-muted);">Sellers describe raw cards differently — use this to understand the PSA equivalent.</p>
             <table class="grade-table">
-              <tr>
-                <th>Raw Condition</th>
-                <th>PSA Equivalent</th>
-                <th>What it means</th>
-              </tr>
-              <tr>
-                <td><span class="raw-badge">Mint (M)</span></td>
-                <td><span class="psa-badge">PSA 9</span></td>
-                <td>Near perfect, only flaws under magnification</td>
-              </tr>
-              <tr>
-                <td><span class="raw-badge">NM-Mint</span></td>
-                <td><span class="psa-badge">PSA 8–9</span></td>
-                <td>Very minor imperfections, strong eye appeal</td>
-              </tr>
-              <tr>
-                <td><span class="raw-badge">Near Mint (NM)</span></td>
-                <td><span class="psa-badge">PSA 7–8</span></td>
-                <td>Slight wear visible on close inspection</td>
-              </tr>
-              <tr>
-                <td><span class="raw-badge">Lightly Played (LP)</span></td>
-                <td><span class="psa-badge">PSA 6–7</span></td>
-                <td>Minor visible wear on corners or edges</td>
-              </tr>
+              <tr><th>Raw Condition</th><th>PSA Equiv.</th><th>What it means</th></tr>
+              <tr><td><span class="raw-badge">Mint (M)</span></td><td><span class="psa-badge">PSA 9</span></td><td>Near perfect, flaws only under magnification</td></tr>
+              <tr><td><span class="raw-badge">NM-Mint</span></td><td><span class="psa-badge">PSA 8–9</span></td><td>Very minor imperfections, strong eye appeal</td></tr>
+              <tr><td><span class="raw-badge">Near Mint (NM)</span></td><td><span class="psa-badge">PSA 7–8</span></td><td>Slight wear visible on close inspection</td></tr>
+              <tr><td><span class="raw-badge">Lightly Played</span></td><td><span class="psa-badge">PSA 6–7</span></td><td>Minor visible wear on corners or edges</td></tr>
             </table>
-            <p style="margin-top:8px;font-size:11px;color:var(--text-hint);">
-              ⚠️ Most sellers who list "Near Mint" haven't inspected under magnification — actual grade may vary. Always check listing photos carefully.
-            </p>
+            <p style="margin-top:8px;font-size:11px;color:var(--text-hint);">⚠️ Most sellers who list "Near Mint" haven't inspected under magnification — actual grade may vary.</p>
           </div>
-        </div>`;
-
-      html += `<div id="condContent">${priceBlock(activeCond === 'mint' ? active.mint : active.nm)}</div>`;
+        </div>
+        <div id="condContent">${priceBlock(activeCond === 'mint' ? active.mint : active.nm)}</div>`;
     } else {
       html += `<div class="no-data">⚠️ No active listings found for this card on eBay AU right now.</div>`;
     }
 
-    // ── TCGPlayer US market ───────────────────────────────────────────────
-    if (tcgp) {
-      const USD_TO_AUD = 1.57;
-      // ── Smart variant selection based on card rarity ────────────────────
-      // Instead of showing all price types, pick the most relevant ones
-      // based on what the card actually is.
-      const rarity = (document.getElementById('detailRarity').textContent || '').toLowerCase();
-      const setName = (document.getElementById('detailSet').textContent || '').toLowerCase();
+    // TCGPlayer
+    if (tcgp) html += buildTCGPlayerBlock(tcgp, rarity, setName);
 
-      const is1st       = setName.includes('base set') || setName.includes('1st') || setName.includes('shadowless');
-      const isHolo      = rarity.includes('holo') || rarity.includes('rare') || rarity.includes('ultra') ||
-                          rarity.includes('secret') || rarity.includes('amazing') || rarity.includes('legend') ||
-                          rarity.includes('illustration') || rarity.includes('special');
-      const isCommon    = rarity.includes('common') || rarity.includes('uncommon');
-
-      // Build priority order based on card type
-      let priorityOrder;
-      if (is1st && isHolo) {
-        priorityOrder = ['firstEditionHolofoil', 'holofoil', 'firstEditionNormal', 'reverseHolofoil', 'normal'];
-      } else if (is1st && isCommon) {
-        priorityOrder = ['firstEditionNormal', 'normal', 'reverseHolofoil', 'firstEditionHolofoil', 'holofoil'];
-      } else if (isHolo) {
-        priorityOrder = ['holofoil', 'firstEditionHolofoil', 'reverseHolofoil', 'normal', 'firstEditionNormal'];
-      } else if (isCommon) {
-        priorityOrder = ['normal', 'reverseHolofoil', 'firstEditionNormal', 'holofoil', 'firstEditionHolofoil'];
-      } else {
-        priorityOrder = ['holofoil', 'firstEditionHolofoil', 'normal', 'reverseHolofoil', 'firstEditionNormal'];
-      }
-
-      const labelMap = {
-        holofoil:             'Holofoil',
-        firstEditionHolofoil: '1st Edition Holo',
-        reverseHolofoil:      'Reverse Holo',
-        normal:               'Normal',
-        firstEditionNormal:   '1st Edition Normal',
-      };
-
-      // Filter to available price types, keeping priority order, max 2 variants
-      const types = priorityOrder
-        .filter(key => tcgp[key]?.market)
-        .slice(0, 2)
-        .map(key => ({ key, label: labelMap[key] }));
-
-      if (types.length) {
-        html += `
-          <div class="section-header sh-us">
-            <i class="ti ti-world"></i>
-            <div><div>🇺🇸 US Market · TCGPlayer</div><div class="sh-sub">American prices converted to AUD</div></div>
-          </div>
-          <div class="price-box" style="background:#f0f4ff;border-color:rgba(0,80,200,0.15);">`;
-
-        types.forEach((t, i) => {
-          const p = tcgp[t.key];
-
-          // ── Sanity check individual price fields ─────────────────────
-          // Collect all non-null values and compute median to detect outliers.
-          // Any value more than 4x the median is flagged and hidden.
-          const allVals = [p.low, p.mid, p.market, p.high].filter(v => v != null && v > 0);
-          const sorted  = [...allVals].sort((a, b) => a - b);
-          const median  = sorted.length
-            ? sorted[Math.floor(sorted.length / 2)]
-            : null;
-          const cap = median ? median * 4 : Infinity;
-
-          const safeVal = v => (v != null && v > 0 && v <= cap) ? v : null;
-          const low    = safeVal(p.low);
-          const mid    = safeVal(p.mid);
-          const market = safeVal(p.market);
-          const high   = safeVal(p.high);
-
-          // Use market as primary; fall back to mid if market is outlier
-          const primaryUSD = market ?? mid ?? low;
-          if (!primaryUSD) return; // skip if no valid price at all
-
-          const aud = (primaryUSD * USD_TO_AUD).toFixed(2);
-
-          html += `
-            <div style="${i > 0 ? 'margin-top:12px;padding-top:12px;border-top:0.5px solid rgba(0,0,0,0.07)' : ''}">
-              <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">${t.label}</div>
-              <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;">
-                <span style="font-size:26px;font-weight:700;color:#1a1a1a;">A$${aud}</span>
-                <span style="font-size:12px;color:#94a3b8;">(US$${primaryUSD.toFixed(2)})</span>
-              </div>
-              <div class="price-stats">
-                ${low    != null ? `<div class="stat-chip"><strong>A$${(low*USD_TO_AUD).toFixed(2)}</strong>Low</div>` : ''}
-                ${mid    != null ? `<div class="stat-chip"><strong>A$${(mid*USD_TO_AUD).toFixed(2)}</strong>Mid</div>` : ''}
-                ${market != null ? `<div class="stat-chip"><strong>A$${(market*USD_TO_AUD).toFixed(2)}</strong>Market</div>` : ''}
-                ${high   != null ? `<div class="stat-chip"><strong>A$${(high*USD_TO_AUD).toFixed(2)}</strong>High</div>` : ''}
-              </div>
-            </div>`;
-        });
-
-        html += `</div>`;
-
-        if (tcgp.url) {
-          html += `<a href="${tcgp.url}" target="_blank" class="btn btn-blue" style="margin-bottom:8px;">
-            <i class="ti ti-external-link"></i> View on TCGPlayer.com</a>`;
-        }
-        if (tcgp.updatedAt) {
-          html += `<div style="font-size:11px;color:var(--text-hint);margin-bottom:4px;">TCGPlayer data updated ${tcgp.updatedAt}</div>`;
-        }
-      } else {
-        html += `
-          <div class="section-header sh-us">
-            <i class="ti ti-world"></i>
-            <div><div>🇺🇸 US Market · TCGPlayer</div><div class="sh-sub">American prices converted to AUD</div></div>
-          </div>
-          <div class="no-data">No TCGPlayer pricing available for this card.</div>`;
-      }
-    }
-
-    // ── Sold listings note ────────────────────────────────────────────────
+    // Sold note
     html += `
       <div class="section-header sh-sold" style="margin-top:4px;">
         <i class="ti ti-checklist"></i>
         <div><div>Sold Listings · eBay AU</div><div class="sh-sub">See what buyers actually paid — tap below</div></div>
       </div>
       <div style="font-size:13px;color:var(--text-muted);background:var(--surface2);border-radius:var(--radius-md);padding:12px 14px;margin-bottom:12px;border:0.5px solid var(--border);line-height:1.6;">
-        eBay AU sold listing data requires a logged-in session and isn't available via public APIs. Tap <strong>Sold listings</strong> below to view recent sales directly on eBay AU — filtered and sorted by most recently ended.
+        Tap <strong>Sold listings</strong> below to view recent sales directly on eBay AU, filtered to Australian sellers only.
       </div>`;
 
     section.innerHTML = html;
-
-    // Store data for tab switching
     section._activeData = active;
-    section._tcgp = tcgp;
   }
 
-  function toggleGradeInfo() {
-    const body = document.getElementById('gradeInfoBody');
-    const icon = document.getElementById('gradeToggleIcon');
-    if (body && icon) {
-      body.classList.toggle('open');
-      icon.classList.toggle('open');
+  // ── Render Japanese pricing ───────────────────────────────────────────────
+  function renderPricingJP(data, cm, tcgp) {
+    const section = document.getElementById('pricingSection');
+    const active  = data.active || {};
+    const hasMint = !!active.mint;
+    const hasNM   = !!active.nm;
+    const AUD_RATE = 1.57;
+    const JPY_RATE = 0.0096; // approximate JPY to AUD
+
+    let html = `
+      <div class="section-header sh-active jp">
+        <i class="ti ti-tag"></i>
+        <div><div>Current Asking Prices · eBay AU</div><div class="sh-sub">Japanese cards listed by Australian sellers</div></div>
+      </div>`;
+
+    if (hasMint || hasNM) {
+      const showBoth = hasMint && hasNM;
+      if (showBoth) {
+        html += `<div class="cond-tabs" id="condTabs">
+          <div class="cond-tab ${activeCond === 'nm' ? 'active jp' : ''}" onclick="switchCond('nm')">Near Mint (NM)</div>
+          <div class="cond-tab ${activeCond === 'mint' ? 'active jp' : ''}" onclick="switchCond('mint')">Mint (M)</div>
+        </div>`;
+      } else {
+        activeCond = hasMint ? 'mint' : 'nm';
+      }
+      html += `<div id="condContent">${priceBlock(activeCond === 'mint' ? active.mint : active.nm)}</div>`;
+    } else {
+      html += `<div class="no-data">⚠️ No Japanese card listings found on eBay AU right now.</div>`;
     }
+
+    // Cardmarket EUR pricing (European market reference for JP cards)
+    if (cm) {
+      const eurToAud = 1.73;
+      html += `
+        <div class="section-header sh-cm">
+          <i class="ti ti-world"></i>
+          <div><div>🇪🇺 European Market · Cardmarket</div><div class="sh-sub">EUR prices converted to AUD</div></div>
+        </div>
+        <div class="price-box" style="background:#f0fdf4;border-color:rgba(0,150,80,0.15);">
+          <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">Market Average (30 days)</div>
+          <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;">
+            <span style="font-size:26px;font-weight:700;color:#1a1a1a;">A$${(cm.avg30 * eurToAud).toFixed(2)}</span>
+            <span style="font-size:12px;color:#94a3b8;">(€${cm.avg30?.toFixed(2)})</span>
+          </div>
+          <div class="price-stats">
+            ${cm.low   != null ? `<div class="stat-chip"><strong>A$${(cm.low*eurToAud).toFixed(2)}</strong>Low <span style="font-size:9px;color:#94a3b8">(€${cm.low.toFixed(2)})</span></div>` : ''}
+            ${cm.avg   != null ? `<div class="stat-chip"><strong>A$${(cm.avg*eurToAud).toFixed(2)}</strong>Avg <span style="font-size:9px;color:#94a3b8">(€${cm.avg.toFixed(2)})</span></div>` : ''}
+            ${cm.trend != null ? `<div class="stat-chip"><strong>A$${(cm.trend*eurToAud).toFixed(2)}</strong>Trend <span style="font-size:9px;color:#94a3b8">(€${cm.trend.toFixed(2)})</span></div>` : ''}
+          </div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:10px;">Updated ${cm.updated?.split('T')[0] || '—'} · Cardmarket.com</div>
+        </div>`;
+    }
+
+    // TCGPlayer USD if available for JP card
+    if (tcgp) {
+      const types = ['normal', 'reverse'].filter(k => tcgp[k]?.marketPrice);
+      if (types.length) {
+        html += `
+          <div class="section-header sh-us">
+            <i class="ti ti-world"></i>
+            <div><div>🇺🇸 US Market · TCGPlayer</div><div class="sh-sub">USD prices converted to AUD</div></div>
+          </div>
+          <div class="price-box" style="background:#f0f4ff;border-color:rgba(0,80,200,0.15);">`;
+        types.forEach((k, i) => {
+          const p   = tcgp[k];
+          const aud = (p.marketPrice * AUD_RATE).toFixed(2);
+          html += `
+            <div style="${i > 0 ? 'margin-top:10px;padding-top:10px;border-top:0.5px solid rgba(0,0,0,0.07)' : ''}">
+              <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">${k === 'normal' ? 'Normal' : 'Reverse Holo'}</div>
+              <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;">
+                <span style="font-size:22px;font-weight:700;color:#1a1a1a;">A$${aud}</span>
+                <span style="font-size:12px;color:#94a3b8;">(US$${p.marketPrice.toFixed(2)})</span>
+              </div>
+              <div class="price-stats">
+                ${p.lowPrice    ? `<div class="stat-chip"><strong>A$${(p.lowPrice*AUD_RATE).toFixed(2)}</strong>Low</div>` : ''}
+                ${p.midPrice    ? `<div class="stat-chip"><strong>A$${(p.midPrice*AUD_RATE).toFixed(2)}</strong>Mid</div>` : ''}
+                ${p.marketPrice ? `<div class="stat-chip"><strong>A$${(p.marketPrice*AUD_RATE).toFixed(2)}</strong>Market</div>` : ''}
+                ${p.highPrice   ? `<div class="stat-chip"><strong>A$${(p.highPrice*AUD_RATE).toFixed(2)}</strong>High</div>` : ''}
+              </div>
+            </div>`;
+        });
+        html += `</div>`;
+      }
+    }
+
+    // Sold note
+    html += `
+      <div class="section-header sh-sold" style="margin-top:4px;">
+        <i class="ti ti-checklist"></i>
+        <div><div>Sold Listings · eBay AU</div><div class="sh-sub">See what buyers paid — tap below</div></div>
+      </div>
+      <div style="font-size:13px;color:var(--text-muted);background:var(--surface2);border-radius:var(--radius-md);padding:12px 14px;margin-bottom:12px;border:0.5px solid var(--border);line-height:1.6;">
+        Tap <strong>Sold listings</strong> below to see recent Japanese card sales from Australian sellers on eBay AU.
+      </div>`;
+
+    section.innerHTML = html;
+    section._activeData = active;
   }
 
+  // ── TCGPlayer block (English cards) ──────────────────────────────────────
+  function buildTCGPlayerBlock(tcgp, rarity, setName) {
+    const USD_TO_AUD = 1.57;
+    const r = rarity.toLowerCase();
+    const s = setName.toLowerCase();
+    const is1st    = s.includes('base set') || s.includes('shadowless');
+    const isHolo   = r.includes('holo') || r.includes('rare') || r.includes('ultra') || r.includes('secret') || r.includes('illustration') || r.includes('special') || r.includes('amazing');
+    const isCommon = r.includes('common') || r.includes('uncommon');
+    let order;
+    if (is1st && isHolo)   order = ['firstEditionHolofoil','holofoil','firstEditionNormal','reverseHolofoil','normal'];
+    else if (is1st)        order = ['firstEditionNormal','normal','reverseHolofoil','firstEditionHolofoil','holofoil'];
+    else if (isHolo)       order = ['holofoil','firstEditionHolofoil','reverseHolofoil','normal','firstEditionNormal'];
+    else if (isCommon)     order = ['normal','reverseHolofoil','firstEditionNormal','holofoil','firstEditionHolofoil'];
+    else                   order = ['holofoil','firstEditionHolofoil','normal','reverseHolofoil','firstEditionNormal'];
+
+    const labelMap = { holofoil:'Holofoil', firstEditionHolofoil:'1st Ed. Holo', reverseHolofoil:'Reverse Holo', normal:'Normal', firstEditionNormal:'1st Ed. Normal' };
+    const types = order.filter(k => tcgp[k]?.market).slice(0, 2).map(k => ({ key: k, label: labelMap[k] }));
+
+    let html = `
+      <div class="section-header sh-us">
+        <i class="ti ti-world"></i>
+        <div><div>🇺🇸 US Market · TCGPlayer</div><div class="sh-sub">American prices converted to AUD</div></div>
+      </div>`;
+
+    if (!types.length) return html + `<div class="no-data">No TCGPlayer pricing available for this card.</div>`;
+
+    html += `<div class="price-box" style="background:#f0f4ff;border-color:rgba(0,80,200,0.15);">`;
+    types.forEach((t, i) => {
+      const p   = tcgp[t.key];
+      const all = [p.low, p.mid, p.market, p.high].filter(v => v != null && v > 0);
+      const med = all.sort((a,b)=>a-b)[Math.floor(all.length/2)] || Infinity;
+      const cap = med * 4;
+      const safe = v => (v != null && v > 0 && v <= cap) ? v : null;
+      const low = safe(p.low), mid = safe(p.mid), market = safe(p.market), high = safe(p.high);
+      const primary = market ?? mid ?? low;
+      if (!primary) return;
+      html += `
+        <div style="${i>0?'margin-top:12px;padding-top:12px;border-top:0.5px solid rgba(0,0,0,0.07)':''}">
+          <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">${t.label}</div>
+          <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;">
+            <span style="font-size:26px;font-weight:700;color:#1a1a1a;">A$${(primary*USD_TO_AUD).toFixed(2)}</span>
+            <span style="font-size:12px;color:#94a3b8;">(US$${primary.toFixed(2)})</span>
+          </div>
+          <div class="price-stats">
+            ${low    ? `<div class="stat-chip"><strong>A$${(low*USD_TO_AUD).toFixed(2)}</strong>Low</div>` : ''}
+            ${mid    ? `<div class="stat-chip"><strong>A$${(mid*USD_TO_AUD).toFixed(2)}</strong>Mid</div>` : ''}
+            ${market ? `<div class="stat-chip"><strong>A$${(market*USD_TO_AUD).toFixed(2)}</strong>Market</div>` : ''}
+            ${high   ? `<div class="stat-chip"><strong>A$${(high*USD_TO_AUD).toFixed(2)}</strong>High</div>` : ''}
+          </div>
+        </div>`;
+    });
+    html += `</div>`;
+    if (tcgp.url) html += `<a href="${tcgp.url}" target="_blank" class="btn btn-blue" style="margin-bottom:8px;"><i class="ti ti-external-link"></i> View on TCGPlayer.com</a>`;
+    if (tcgp.updatedAt) html += `<div style="font-size:11px;color:var(--text-hint);margin-bottom:4px;">TCGPlayer data updated ${tcgp.updatedAt}</div>`;
+    return html;
+  }
+
+  // ── Tab switching ─────────────────────────────────────────────────────────
   function switchCond(cond) {
     activeCond = cond;
-    const section = document.getElementById('pricingSection');
-    const active  = section._activeData || {};
-    // Update tab styles
+    const active = document.getElementById('pricingSection')._activeData || {};
     document.querySelectorAll('.cond-tab').forEach(t => {
-      t.classList.toggle('active', t.textContent.toLowerCase().includes(cond));
+      const isActive = t.textContent.toLowerCase().includes(cond);
+      t.className = 'cond-tab' + (isActive ? (currentLang === 'jp' ? ' active jp' : ' active') : '');
     });
-    // Update content
     document.getElementById('condContent').innerHTML = priceBlock(cond === 'mint' ? active.mint : active.nm);
   }
 
-  // ── Load sets ──────────────────────────────────────────────────────────────
-  async function loadSets() {
-    try {
-      const res  = await fetch(`${TCG_API}/sets?orderBy=-releaseDate&pageSize=500`);
-      const data = await res.json();
-      ALL_SETS = data.data || [];
-
-      const grouped = {};
-      ALL_SETS.forEach(set => {
-        const s = set.series || 'Other';
-        if (!grouped[s]) grouped[s] = [];
-        grouped[s].push(set);
-      });
-
-      const sel = document.getElementById('setFilter');
-      Object.entries(grouped).forEach(([series, sets]) => {
-        const grp = document.createElement('optgroup');
-        grp.label = series;
-        sets.forEach(set => {
-          const opt = document.createElement('option');
-          opt.value = set.id;
-          opt.textContent = set.name;
-          grp.appendChild(opt);
-        });
-        sel.appendChild(grp);
-      });
-    } catch(e) { console.warn('Sets failed to load:', e); }
+  function toggleGradeInfo() {
+    document.getElementById('gradeInfoBody')?.classList.toggle('open');
+    document.getElementById('gradeToggleIcon')?.classList.toggle('open');
   }
 
-  loadSets();
+  // ── Smart EN set detection ────────────────────────────────────────────────
+  let ALL_SETS = [];
+  const STOP_WORDS = new Set(['card','cards','pokemon','pokémon','holo','rare','ex','gx','vmax','vstar','shiny','full','art','alt','secret','trainer','energy','item','supporter','stadium','the','and','of','in','a','an','for','with','set','series']);
+
+  function parseSearchQuery(raw) {
+    if (!ALL_SETS.length) return { namePart: raw.trim(), detectedSet: null, matchedSetName: null };
+    const words = raw.trim().toLowerCase().split(/\s+/).filter(w => w.length > 1 && !STOP_WORDS.has(w));
+    let best = null, bestScore = 0, bestWords = [];
+    for (const set of ALL_SETS) {
+      const combined = set.name.toLowerCase() + ' ' + (set.series || '').toLowerCase();
+      let score = 0; const matched = [];
+      for (const w of words) { if (combined.includes(w)) { score += w.length; matched.push(w); } }
+      if (matched.length > 1) score += matched.length * 3;
+      if (score > bestScore) { bestScore = score; best = set; bestWords = matched; }
+    }
+    if (bestScore < 4 || !best) return { namePart: raw.trim(), detectedSet: null, matchedSetName: null };
+    let namePart = raw.trim();
+    for (const w of bestWords) namePart = namePart.replace(new RegExp(`\\b${w}\\b`, 'gi'), '');
+    namePart = namePart.trim().replace(/\s+/g, ' ') || raw.trim();
+    return { namePart, detectedSet: best, matchedSetName: best.name };
+  }
+
+  async function loadEnSets() {
+    try {
+      const res  = await fetch(`${TCG_EN}/sets?orderBy=-releaseDate&pageSize=500`);
+      const data = await res.json();
+      ALL_SETS = data.data || [];
+    } catch(e) {}
+  }
+
+  loadEnSets();
 </script>
 </body>
 </html>
