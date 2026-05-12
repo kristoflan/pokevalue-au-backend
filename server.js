@@ -43,9 +43,7 @@ const JUNK_KEYWORDS = [
   'framed', 'frame', 'canvas', 'print', 'poster', 'art print',
   'extended art', 'full art print', 'metal card', 'gold card',
   'custom card', 'fan art', 'orica', 'holo overlay',
-  // Sealed BOXES and large products — NOT sealed single promo cards
-  // Note: 'etb' and 'elite trainer box' removed — they appear in promo card titles
-  // e.g. "Charmander SVP044 Black Star Promo ETB Sealed" = sealed single card from ETB
+  // Sealed BOXES and large products
   'booster box', 'display box',
   'booster pack',
   'gift box', 'blister pack',
@@ -57,89 +55,27 @@ const JUNK_KEYWORDS = [
   // Accessories
   'playmat', 'binder', 'sleeve', 'sleeves', 'deckbox', 'deck box',
   'album', 'folder', 'figure', 'plush', 'pin', 'coin', 'dice', 'token',
-  // Condition flags we never want
+  // Condition flags
   'damaged', 'heavily played',
 ];
 
-// ── Sealed box detector ────────────────────────────────────────────────────────
-// Some keywords only indicate junk when combined with others.
-// e.g. "ETB" alone could mean a sealed promo card from an ETB — that's fine.
-// But "ETB sealed" where ETB is the main product = junk.
-// "booster" alone is fine (sellers say "booster holo") but "booster box" = junk.
-function isSealedBox(title) {
-  const lower = title.toLowerCase();
-  const hasPromo = lower.includes('promo');
-
-  // Elite Trainer Box as the main product
-  // If "promo" appears in the title, it's likely a sealed promo card FROM an ETB — allow it
-  if (lower.includes('elite trainer box') && !hasPromo) return true;
-
-  // ETB + sealed: block ONLY if there's no promo mention
-  // "Charmander ETB Black Star Promo SVP044 Sealed" = sealed promo card — allow
-  // "Elite Trainer Box Sealed" = the box itself — block
-  if (lower.includes('etb') && lower.includes('sealed') && !hasPromo) return true;
-  if (lower.includes('etb') && lower.includes('box') && !hasPromo) return true;
-
-  // Tin as main product
-  if (lower.includes(' tin ') && !hasPromo) return true;
-  if (lower.endsWith(' tin') && !hasPromo) return true;
-
-  // Booster as main product
-  if (lower.includes('booster box')) return true;
-  if (lower.includes('booster pack') && !hasPromo) return true;
-
-  return false;
-}
 const MINT_KEYWORDS = ['gem mint', 'gem-mint', 'perfect', ' mint ', 'mint/nm', 'nm/mint'];
 const NM_KEYWORDS   = ['near mint', 'near-mint', 'nm/m', 'nm-m', ' nm ', 'excellent', 'lightly played', ' lp '];
 
 function isGraded(t) { return GRADED_KEYWORDS.some(k => t.toLowerCase().includes(k)); }
 function isJunk(t)   { return JUNK_KEYWORDS.some(k => t.toLowerCase().includes(k)) || isSealedBox(t); }
 
-// ── Title relevance check ─────────────────────────────────────────────────────
-// Verifies the listing title is actually for the specific card we searched for.
-// Checks that the card name and number both appear in the title.
-// This prevents different promos, variants, or unrelated cards slipping through.
-function isTitleRelevant(title, cardName, cardNumber, setTotal) {
+function isSealedBox(title) {
   const lower = title.toLowerCase();
-
-  // Card name check — all words of the name must appear in the title
-  const nameWords = cardName.toLowerCase().split(/\s+/).filter(w => w.length > 2);
-  const nameMatch = nameWords.every(w => lower.includes(w));
-  if (!nameMatch) return false;
-
-  // Card number check — if we have a number, it must appear in the title
-  // For promos and sets without totals, just check the number itself
-  if (cardNumber) {
-    const numInt   = parseInt(cardNumber, 10);
-    const totalInt = parseInt(setTotal, 10);
-    const hasTotal = setTotal && !isNaN(totalInt);
-
-    // Build possible number formats sellers might use
-    // Also handle promo variants where sellers append the number to a prefix
-    // e.g. card number "44" might appear as "SVP044", "SWSH044", "SVP44" etc.
-    const paddedNum = cardNumber.toString().padStart(3, '0'); // "44" -> "044"
-    const numFormats = [
-      cardNumber,                                            // "44"
-      paddedNum,                                             // "044"
-      hasTotal ? `${cardNumber}/${setTotal}` : null,         // "44/102"
-      hasTotal ? `${cardNumber} / ${setTotal}` : null,       // "44 / 102"
-      `#${cardNumber}`,                                      // "#44"
-      `#${paddedNum}`,                                       // "#044"
-      `no. ${cardNumber}`,                                   // "no. 44"
-      `no.${cardNumber}`,                                    // "no.44"
-      `svp${cardNumber}`,                                    // "svp44"
-      `svp${paddedNum}`,                                     // "svp044"
-      `swsh${paddedNum}`,                                    // "swsh044"
-      `sm${paddedNum}`,                                      // "sm044"
-      `xy${paddedNum}`,                                      // "xy044"
-    ].filter(Boolean);
-
-    const numberFound = numFormats.some(fmt => lower.includes(fmt.toLowerCase()));
-    if (!numberFound) return false;
-  }
-
-  return true;
+  const hasPromo = lower.includes('promo');
+  if (lower.includes('elite trainer box') && !hasPromo) return true;
+  if (lower.includes('etb') && lower.includes('sealed') && !hasPromo) return true;
+  if (lower.includes('etb') && lower.includes('box') && !hasPromo) return true;
+  if (lower.includes(' tin ') && !hasPromo) return true;
+  if (lower.endsWith(' tin') && !hasPromo) return true;
+  if (lower.includes('booster box')) return true;
+  if (lower.includes('booster pack') && !hasPromo) return true;
+  return false;
 }
 
 function detectCondition(t) {
@@ -149,25 +85,46 @@ function detectCondition(t) {
   return 'unknown';
 }
 
+// ─── Title relevance check ────────────────────────────────────────────────────
+function isTitleRelevant(title, cardName, cardNumber, setTotal) {
+  const lower = title.toLowerCase();
+  const nameWords = cardName.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+  const nameMatch = nameWords.every(w => lower.includes(w));
+  if (!nameMatch) return false;
+
+  if (cardNumber) {
+    const numInt   = parseInt(cardNumber, 10);
+    const totalInt = parseInt(setTotal, 10);
+    const hasTotal = setTotal && !isNaN(totalInt);
+    const paddedNum = cardNumber.toString().padStart(3, '0');
+    const numFormats = [
+      cardNumber, paddedNum,
+      hasTotal ? `${cardNumber}/${setTotal}` : null,
+      hasTotal ? `${cardNumber} / ${setTotal}` : null,
+      `#${cardNumber}`, `#${paddedNum}`,
+      `no. ${cardNumber}`, `no.${cardNumber}`,
+      `svp${cardNumber}`, `svp${paddedNum}`,
+      `swsh${paddedNum}`, `sm${paddedNum}`, `xy${paddedNum}`,
+    ].filter(Boolean);
+    const numberFound = numFormats.some(fmt => lower.includes(fmt.toLowerCase()));
+    if (!numberFound) return false;
+  }
+  return true;
+}
+
 // ─── Query builder ────────────────────────────────────────────────────────────
 function buildQuery(cardName, cardNumber, setTotal) {
   const num   = parseInt(cardNumber, 10);
   const total = parseInt(setTotal,   10);
   const isSecret = cardNumber && setTotal && !isNaN(num) && !isNaN(total) && num > total;
   const hasNum   = cardNumber && setTotal && !isNaN(num) && !isNaN(total) && num <= total;
-
-  // Detect promo cards — card number contains letters (SWSH001, SM01, XY01, 44a etc.)
-  // OR the set total is very large (200+) which typically indicates a promo set
-  // where sellers NEVER write the /total format
   const isPromo  = cardNumber && /[a-zA-Z]/.test(cardNumber);
   const isLargeSet = hasNum && total >= 200;
 
   if (isSecret || isPromo || isLargeSet) {
-    // Use number only — no /total — sellers just write "Charmander 44" or "Pikachu SWSH001"
     return { query: cardNumber ? `${cardName} ${cardNumber}` : cardName, isSecret, hasNum, isPromo };
   }
   if (hasNum) {
-    // Standard set card — include number/total as sellers consistently use this format
     return { query: `${cardName} ${cardNumber}/${setTotal}`, isSecret, hasNum, isPromo: false };
   }
   return { query: cardName, isSecret: false, hasNum: false, isPromo: false };
@@ -218,19 +175,14 @@ function calculatePrice(sales) {
 
 // ─── eBay Browse API — active listings ───────────────────────────────────────
 async function fetchActiveListings(cardName, cardNumber, setTotal, token, isPromoOverride = false) {
-  // Allow frontend to signal promo cards directly
   let { query, isSecret, hasNum, isPromo } = buildQuery(cardName, cardNumber, setTotal);
-  const isJapanese = req.query.isJapanese === 'true';
+  const isJapanese = false; // handled separately per call
 
-  // Japanese cards — add "japanese" to search to get JP listings on eBay AU
-  if (isJapanese) {
-    query = `${cardName} ${cardNumber} japanese`.trim();
-    console.log('Japanese card — using query:', query);
-  } else if (isPromoOverride || isPromo) {
-    // Promo cards — add "promo" keyword
+  if (isPromoOverride || isPromo) {
     query = `${cardName} ${cardNumber} promo`;
     console.log('Promo card detected — using promo query:', query);
   }
+
   console.log('Fetching active listings:', query);
 
   const fetch50 = async (q) => {
@@ -258,22 +210,18 @@ async function fetchActiveListings(cardName, cardNumber, setTotal, token, isProm
   };
 
   let items = await fetch50(query);
-
-  // Fallback to name-only if too few results
   if (items.length < 5 && hasNum) {
     const broad = await fetch50(`${cardName} pokemon card`);
     const seen  = new Set(items.map(i => i.itemId));
     broad.forEach(i => { if (!seen.has(i.itemId)) items.push(i); });
   }
 
-  const mint = [], nm = [], unknown = [], graded = [];
+  const mint = [], nm = [], unknown = [];
 
   items.forEach(item => {
     const title = item.title || '';
     const price = Math.round(parseFloat(item.price?.value || 0) * 100) / 100;
     if (price < 0.50 || price > 10000 || isJunk(title)) return;
-
-    // Verify the listing is actually for this specific card
     if (!isTitleRelevant(title, cardName, cardNumber, setTotal)) return;
 
     const sale = {
@@ -281,9 +229,6 @@ async function fetchActiveListings(cardName, cardNumber, setTotal, token, isProm
       date: item.itemCreationDate || new Date().toISOString(),
       url:  item.itemWebUrl,
     };
-
-    // Graded cards excluded from results for now — dedicated graded search coming later
-    if (isGraded(title)) return;
 
     const c = detectCondition(title);
     if (c === 'mint')    mint.push(sale);
@@ -316,7 +261,6 @@ const fmt = r => r ? {
 // ─── Routes ──────────────────────────────────────────────────────────────────
 app.get('/', (req, res) => res.json({ status: 'PokéValue AU running', version: '2.1.0' }));
 
-// eBay notification challenge
 app.get('/ebay/account-deletion', (req, res) => {
   const c = req.query.challenge_code;
   if (!c) return res.json({ status: 'live' });
@@ -329,18 +273,35 @@ app.get('/ebay/account-deletion', (req, res) => {
 });
 app.post('/ebay/account-deletion', (req, res) => res.json({ acknowledged: true }));
 
-// Main pricing endpoint
-// GET /price?name=Charizard&number=4&total=102
+// ─── Main pricing endpoint ────────────────────────────────────────────────────
 app.get('/price', async (req, res) => {
   const { name, number, total } = req.query;
-  const isPromoParam = req.query.isPromo === 'true';
+  const isPromoParam  = req.query.isPromo === 'true';
+  const isJapanese    = req.query.isJapanese === 'true';
   if (!name) return res.status(400).json({ error: 'name is required' });
 
   try {
     const token      = await getEbayToken();
-    const activeData = await fetchActiveListings(name, number || '', total || '', token, isPromoParam);
 
-      return res.json({
+    // For Japanese cards, override query to include 'japanese'
+    let cardName = name;
+    if (isJapanese) {
+      const { query: baseQuery } = buildQuery(name, number || '', total || '');
+      const jpQuery = `${name} ${number || ''} japanese`.trim();
+      console.log('Japanese card eBay query:', jpQuery);
+      // Temporarily patch name for fetchActiveListings
+      cardName = `${name} japanese`;
+    }
+
+    const activeData = await fetchActiveListings(
+      isJapanese ? `${name} japanese` : name,
+      number || '',
+      total || '',
+      token,
+      isPromoParam
+    );
+
+    return res.json({
       success:    true,
       cardName:   name,
       cardNumber: number && total ? `${number}/${total}` : '',
@@ -355,13 +316,33 @@ app.get('/price', async (req, res) => {
   }
 });
 
-// ── Japanese card search proxy ────────────────────────────────────────────────
+// ── TCGdex diagnostic endpoint
+app.get('/jp-test', async (req, res) => {
+  const results = {};
+  const tests = [
+    ['en_name', 'https://api.tcgdex.net/v2/en/cards?name=umbreon'],
+    ['ja_all',  'https://api.tcgdex.net/v2/ja/cards'],
+    ['ja_name', 'https://api.tcgdex.net/v2/ja/cards?name=umbreon'],
+    ['ja_pika',  'https://api.tcgdex.net/v2/ja/cards?name=pikachu'],
+    ['ja_card',  'https://api.tcgdex.net/v2/ja/cards/swsh3-136'],
+  ];
+  for (const [key, url] of tests) {
+    try {
+      const r = await axios.get(url, { timeout: 10000, headers: { Accept: 'application/json' } });
+      results[key] = { ok: true, status: r.status, count: Array.isArray(r.data) ? r.data.length : 'object', sample: Array.isArray(r.data) ? r.data[0] : r.data };
+    } catch(e) {
+      results[key] = { ok: false, status: e.response?.status, error: e.message, data: e.response?.data };
+    }
+  }
+  return res.json(results);
+});
+
+// ── Japanese card search proxy ─────────────────────────────────────────────────
 app.get('/jp-search', async (req, res) => {
   const { name } = req.query;
   if (!name) return res.status(400).json({ error: 'name is required' });
 
   try {
-    // TCGdex uses bracket notation for pagination — build URL manually to avoid encoding issues
     const searchUrl = `https://api.tcgdex.net/v2/ja/cards?name=${encodeURIComponent(name)}&pagination[itemsPerPage]=24`;
     console.log('TCGdex search URL:', searchUrl);
 
@@ -374,7 +355,6 @@ app.get('/jp-search', async (req, res) => {
     console.log(`TCGdex found ${summaries.length} JP cards for "${name}"`);
     if (!summaries.length) return res.json([]);
 
-    // Fetch full card details in parallel
     const details = await Promise.all(
       summaries.slice(0, 24).map(card =>
         axios.get(`https://api.tcgdex.net/v2/ja/cards/${card.id}`, {
