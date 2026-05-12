@@ -206,6 +206,78 @@
     .sh-graded  { background: #faf5ff; color: #6b21a8; border: 0.5px solid #e9d5ff; }
     .sh-sold    { background: #fff7ed; color: #9a3412; border: 0.5px solid #fed7aa; }
 
+    /* ── Grading info tooltip ── */
+    .grade-info {
+      background: #f8faff;
+      border: 0.5px solid #c7d2fe;
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .grade-info-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+    }
+    .grade-info-header span {
+      font-size: 12px;
+      font-weight: 600;
+      color: #4338ca;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .grade-info-header .toggle-icon {
+      font-size: 14px;
+      color: #4338ca;
+      transition: transform 0.2s;
+    }
+    .grade-info-header .toggle-icon.open { transform: rotate(180deg); }
+    .grade-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 11px;
+    }
+    .grade-table th {
+      text-align: left;
+      font-weight: 600;
+      color: var(--text-hint);
+      padding: 3px 6px;
+      border-bottom: 0.5px solid var(--border);
+    }
+    .grade-table td {
+      padding: 4px 6px;
+      border-bottom: 0.5px solid var(--border);
+      color: var(--text-muted);
+    }
+    .grade-table tr:last-child td { border-bottom: none; }
+    .grade-table .psa-badge {
+      display: inline-block;
+      background: #1d4ed8;
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+    .grade-table .raw-badge {
+      display: inline-block;
+      background: var(--success-bg);
+      color: var(--success-text);
+      font-size: 10px;
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+    .grade-info-body { display: none; }
+    .grade-info-body.open { display: block; }
+
     /* ── Condition tabs ── */
     .cond-tabs {
       display: flex; gap: 6px; margin-bottom: 10px;
@@ -648,6 +720,51 @@
       } else {
         activeCond = hasMint ? 'mint' : 'nm';
       }
+
+      // Grading equivalence guide
+      html += `
+        <div class="grade-info">
+          <div class="grade-info-header" onclick="toggleGradeInfo()">
+            <span><i class="ti ti-info-circle"></i> Raw condition vs PSA grade guide</span>
+            <i class="ti ti-chevron-down toggle-icon" id="gradeToggleIcon"></i>
+          </div>
+          <div class="grade-info-body" id="gradeInfoBody">
+            <p style="margin-top:8px;margin-bottom:6px;font-size:11px;color:var(--text-muted);">
+              Sellers describe raw cards differently — use this guide to understand what condition roughly equates to which PSA grade.
+            </p>
+            <table class="grade-table">
+              <tr>
+                <th>Raw Condition</th>
+                <th>PSA Equivalent</th>
+                <th>What it means</th>
+              </tr>
+              <tr>
+                <td><span class="raw-badge">Mint (M)</span></td>
+                <td><span class="psa-badge">PSA 9</span></td>
+                <td>Near perfect, only flaws under magnification</td>
+              </tr>
+              <tr>
+                <td><span class="raw-badge">NM-Mint</span></td>
+                <td><span class="psa-badge">PSA 8–9</span></td>
+                <td>Very minor imperfections, strong eye appeal</td>
+              </tr>
+              <tr>
+                <td><span class="raw-badge">Near Mint (NM)</span></td>
+                <td><span class="psa-badge">PSA 7–8</span></td>
+                <td>Slight wear visible on close inspection</td>
+              </tr>
+              <tr>
+                <td><span class="raw-badge">Lightly Played (LP)</span></td>
+                <td><span class="psa-badge">PSA 6–7</span></td>
+                <td>Minor visible wear on corners or edges</td>
+              </tr>
+            </table>
+            <p style="margin-top:8px;font-size:11px;color:var(--text-hint);">
+              ⚠️ Most sellers who list "Near Mint" haven't inspected under magnification — actual grade may vary. Always check listing photos carefully.
+            </p>
+          </div>
+        </div>`;
+
       html += `<div id="condContent">${priceBlock(activeCond === 'mint' ? active.mint : active.nm)}</div>`;
     } else {
       html += `<div class="no-data">⚠️ No active listings found for this card on eBay AU right now.</div>`;
@@ -779,6 +896,15 @@
     // Store data for tab switching
     section._activeData = active;
     section._tcgp = tcgp;
+  }
+
+  function toggleGradeInfo() {
+    const body = document.getElementById('gradeInfoBody');
+    const icon = document.getElementById('gradeToggleIcon');
+    if (body && icon) {
+      body.classList.toggle('open');
+      icon.classList.toggle('open');
+    }
   }
 
   function switchCond(cond) {
