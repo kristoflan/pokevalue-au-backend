@@ -43,11 +43,15 @@ const JUNK_KEYWORDS = [
   'framed', 'frame', 'canvas', 'print', 'poster', 'art print',
   'extended art', 'full art print', 'metal card', 'gold card',
   'custom card', 'fan art', 'orica', 'holo overlay',
-  // Sealed product
-  'booster', 'booster box', 'booster pack', 'display box',
-  'etb', 'elite trainer', 'tin', 'gift box', 'blister',
+  // Sealed BOXES and large products — NOT sealed single promo cards
+  // Note: 'etb' and 'elite trainer box' removed — they appear in promo card titles
+  // e.g. "Charmander SVP044 Black Star Promo ETB Sealed" = sealed single card from ETB
+  'booster box', 'display box',
+  'booster pack',
+  'gift box', 'blister pack',
   'collection box', 'premium collection', 'special collection',
-  'promo box', 'promo pack', 'promo tin',
+  'promo box', 'promo tin',
+  'theme deck', 'starter deck', 'battle deck',
   // Trays and display items
   'tray', 'art tray', 'extended art tray', 'extended art box',
   // Accessories
@@ -56,11 +60,35 @@ const JUNK_KEYWORDS = [
   // Condition flags we never want
   'damaged', 'heavily played',
 ];
+
+// ── Sealed box detector ────────────────────────────────────────────────────────
+// Some keywords only indicate junk when combined with others.
+// e.g. "ETB" alone could mean a sealed promo card from an ETB — that's fine.
+// But "ETB sealed" where ETB is the main product = junk.
+// "booster" alone is fine (sellers say "booster holo") but "booster box" = junk.
+function isSealedBox(title) {
+  const lower = title.toLowerCase();
+
+  // Elite Trainer Box as the main product (not just mentioned as source of promo)
+  if (lower.includes('elite trainer box') && !lower.includes('promo')) return true;
+  if (lower.includes('etb') && lower.includes('sealed') && !lower.includes('promo card')) return true;
+  if (lower.includes('etb') && lower.includes('box') && !lower.includes('promo')) return true;
+
+  // Tin as main product
+  if (lower.includes(' tin ') && !lower.includes('promo')) return true;
+  if (lower.endsWith(' tin') && !lower.includes('promo')) return true;
+
+  // Booster as main product
+  if (lower.includes('booster box')) return true;
+  if (lower.includes('booster pack') && !lower.includes('promo')) return true;
+
+  return false;
+}
 const MINT_KEYWORDS = ['gem mint', 'gem-mint', 'perfect', ' mint ', 'mint/nm', 'nm/mint'];
 const NM_KEYWORDS   = ['near mint', 'near-mint', 'nm/m', 'nm-m', ' nm ', 'excellent', 'lightly played', ' lp '];
 
 function isGraded(t) { return GRADED_KEYWORDS.some(k => t.toLowerCase().includes(k)); }
-function isJunk(t)   { return JUNK_KEYWORDS.some(k => t.toLowerCase().includes(k)); }
+function isJunk(t)   { return JUNK_KEYWORDS.some(k => t.toLowerCase().includes(k)) || isSealedBox(t); }
 
 // ── Title relevance check ─────────────────────────────────────────────────────
 // Verifies the listing title is actually for the specific card we searched for.
@@ -82,13 +110,23 @@ function isTitleRelevant(title, cardName, cardNumber, setTotal) {
     const hasTotal = setTotal && !isNaN(totalInt);
 
     // Build possible number formats sellers might use
+    // Also handle promo variants where sellers append the number to a prefix
+    // e.g. card number "44" might appear as "SVP044", "SWSH044", "SVP44" etc.
+    const paddedNum = cardNumber.toString().padStart(3, '0'); // "44" -> "044"
     const numFormats = [
-      cardNumber,                                          // "44"
-      hasTotal ? `${cardNumber}/${setTotal}` : null,       // "44/102"
-      hasTotal ? `${cardNumber} / ${setTotal}` : null,     // "44 / 102"
-      `#${cardNumber}`,                                    // "#44"
-      `no. ${cardNumber}`,                                 // "no. 44"
-      `no.${cardNumber}`,                                  // "no.44"
+      cardNumber,                                            // "44"
+      paddedNum,                                             // "044"
+      hasTotal ? `${cardNumber}/${setTotal}` : null,         // "44/102"
+      hasTotal ? `${cardNumber} / ${setTotal}` : null,       // "44 / 102"
+      `#${cardNumber}`,                                      // "#44"
+      `#${paddedNum}`,                                       // "#044"
+      `no. ${cardNumber}`,                                   // "no. 44"
+      `no.${cardNumber}`,                                    // "no.44"
+      `svp${cardNumber}`,                                    // "svp44"
+      `svp${paddedNum}`,                                     // "svp044"
+      `swsh${paddedNum}`,                                    // "swsh044"
+      `sm${paddedNum}`,                                      // "sm044"
+      `xy${paddedNum}`,                                      // "xy044"
     ].filter(Boolean);
 
     const numberFound = numFormats.some(fmt => lower.includes(fmt.toLowerCase()));
