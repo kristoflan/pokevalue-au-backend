@@ -535,7 +535,14 @@
     document.getElementById('detailRarity').textContent = card.rarity || 'Unknown rarity';
 
     // Build eBay AU URLs — active and sold
-    const q = encodeURIComponent(`${card.name} ${card.number || ''}/${card.set?.printedTotal || card.set?.total || ''}`.trim());
+    const setNameQ  = (card.set?.name || '').toLowerCase();
+    const isPromoQ  = setNameQ.includes('promo') || setNameQ.includes('black star') || /[a-zA-Z]/.test(card.number || '');
+    const totalQ    = card.set?.printedTotal || card.set?.total || '';
+    const numPartQ  = isPromoQ || parseInt(totalQ, 10) >= 200
+      ? card.number || ''
+      : `${card.number || ''}/${totalQ}`;
+    const promoTermQ = isPromoQ ? 'promo' : '';
+    const q = encodeURIComponent(`${card.name} ${numPartQ} ${promoTermQ} pokemon`.trim());
     document.getElementById('ebayActiveBtn').href = `https://www.ebay.com.au/sch/i.html?_nkw=${q}&_sop=10&LH_PrefLoc=1`;
     document.getElementById('ebaySoldBtn').href   = `https://www.ebay.com.au/sch/i.html?_nkw=${q}&LH_Sold=1&LH_Complete=1&LH_ItemCondition=3&_sop=13&_fsradio=&LH_PrefLoc=1`;
 
@@ -556,9 +563,21 @@
     detailPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     try {
-      const number = card.number || '';
-      const total  = card.set?.printedTotal || card.set?.total || '';
-      const res  = await fetch(`${BACKEND}/price?name=${encodeURIComponent(card.name)}&number=${encodeURIComponent(number)}&total=${encodeURIComponent(total)}`);
+      const number    = card.number || '';
+      const total     = card.set?.printedTotal || card.set?.total || '';
+      const setName   = (card.set?.name || '').toLowerCase();
+      const supertype = (card.supertype || '').toLowerCase();
+
+      // Detect promo cards:
+      // 1. Set name contains "promo" or "black star"
+      // 2. Card number contains letters (SWSH001, SM01 etc.)
+      // 3. Supertype is "Trainer" or "Energy" with large set totals
+      const isPromo = setName.includes('promo') ||
+                      setName.includes('black star') ||
+                      /[a-zA-Z]/.test(number) ||
+                      (parseInt(total, 10) >= 200 && !setName.includes('scarlet') && !setName.includes('sword') && !setName.includes('sun') && !setName.includes('xy') && !setName.includes('black'));
+
+      const res = await fetch(`${BACKEND}/price?name=${encodeURIComponent(card.name)}&number=${encodeURIComponent(number)}&total=${encodeURIComponent(total)}&isPromo=${isPromo}`);
       if (!res.ok) throw new Error();
       const data = await res.json();
       renderPricing(data, tcgp);

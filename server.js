@@ -173,8 +173,15 @@ function calculatePrice(sales) {
 }
 
 // ─── eBay Browse API — active listings ───────────────────────────────────────
-async function fetchActiveListings(cardName, cardNumber, setTotal, token) {
-  const { query, isSecret, hasNum } = buildQuery(cardName, cardNumber, setTotal);
+async function fetchActiveListings(cardName, cardNumber, setTotal, token, isPromoOverride = false) {
+  // Allow frontend to signal promo cards directly
+  let { query, isSecret, hasNum, isPromo } = buildQuery(cardName, cardNumber, setTotal);
+
+  // If frontend detected it as a promo or buildQuery detected it, append "promo" to query
+  if (isPromoOverride || isPromo) {
+    query = `${cardName} ${cardNumber} promo`;
+    console.log('Promo card detected — using promo query:', query);
+  }
   console.log('Fetching active listings:', query);
 
   const fetch50 = async (q) => {
@@ -277,11 +284,12 @@ app.post('/ebay/account-deletion', (req, res) => res.json({ acknowledged: true }
 // GET /price?name=Charizard&number=4&total=102
 app.get('/price', async (req, res) => {
   const { name, number, total } = req.query;
+  const isPromoParam = req.query.isPromo === 'true';
   if (!name) return res.status(400).json({ error: 'name is required' });
 
   try {
     const token      = await getEbayToken();
-    const activeData = await fetchActiveListings(name, number || '', total || '', token);
+    const activeData = await fetchActiveListings(name, number || '', total || '', token, isPromoParam);
 
       return res.json({
       success:    true,
