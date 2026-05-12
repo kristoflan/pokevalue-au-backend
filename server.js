@@ -31,8 +31,13 @@ async function getEbayToken() {
 const GRADED_KEYWORDS = ['psa', 'bgs', 'cgc', 'ace', 'sgc', 'graded', 'grade'];
 const JUNK_KEYWORDS = [
   // Bulk / lots / multi-card listings
-  'lot', 'bulk', 'bundle', 'both', 'set of', 'pair of', 'combo', 'x10', 'x20', 'x50', '10x', '20x', '50x',
-  '2 cards', '3 cards', '4 cards', '5 cards', 'full set', 'complete set',
+  'lot', 'bulk', 'bundle', 'both', 'set of', 'pair of', 'combo',
+  'x10', 'x20', 'x50', '10x', '20x', '50x',
+  '2 cards', '3 cards', '4 cards', '5 cards', '6 cards', '7 cards', '8 cards',
+  'full set', 'complete set', 'collection of', 'mixed lot',
+  'various', 'assorted', 'selection of', 'choose from',
+  'pick your', 'pick any', 'you choose', 'you pick',
+  'all shown', 'as shown', 'as pictured', 'multiple',
   // Fakes / reprints / custom art
   'reprint', 'proxy', 'fake', 'custom',
   'framed', 'frame', 'canvas', 'print', 'poster', 'art print',
@@ -56,6 +61,43 @@ const NM_KEYWORDS   = ['near mint', 'near-mint', 'nm/m', 'nm-m', ' nm ', 'excell
 
 function isGraded(t) { return GRADED_KEYWORDS.some(k => t.toLowerCase().includes(k)); }
 function isJunk(t)   { return JUNK_KEYWORDS.some(k => t.toLowerCase().includes(k)); }
+
+// ── Title relevance check ─────────────────────────────────────────────────────
+// Verifies the listing title is actually for the specific card we searched for.
+// Checks that the card name and number both appear in the title.
+// This prevents different promos, variants, or unrelated cards slipping through.
+function isTitleRelevant(title, cardName, cardNumber, setTotal) {
+  const lower = title.toLowerCase();
+
+  // Card name check — all words of the name must appear in the title
+  const nameWords = cardName.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+  const nameMatch = nameWords.every(w => lower.includes(w));
+  if (!nameMatch) return false;
+
+  // Card number check — if we have a number, it must appear in the title
+  // For promos and sets without totals, just check the number itself
+  if (cardNumber) {
+    const numInt   = parseInt(cardNumber, 10);
+    const totalInt = parseInt(setTotal, 10);
+    const hasTotal = setTotal && !isNaN(totalInt);
+
+    // Build possible number formats sellers might use
+    const numFormats = [
+      cardNumber,                                          // "44"
+      hasTotal ? `${cardNumber}/${setTotal}` : null,       // "44/102"
+      hasTotal ? `${cardNumber} / ${setTotal}` : null,     // "44 / 102"
+      `#${cardNumber}`,                                    // "#44"
+      `no. ${cardNumber}`,                                 // "no. 44"
+      `no.${cardNumber}`,                                  // "no.44"
+    ].filter(Boolean);
+
+    const numberFound = numFormats.some(fmt => lower.includes(fmt.toLowerCase()));
+    if (!numberFound) return false;
+  }
+
+  return true;
+}
+
 function detectCondition(t) {
   const l = t.toLowerCase();
   if (MINT_KEYWORDS.some(k => l.includes(k))) return 'mint';
@@ -162,7 +204,9 @@ async function fetchActiveListings(cardName, cardNumber, setTotal, token) {
     const title = item.title || '';
     const price = Math.round(parseFloat(item.price?.value || 0) * 100) / 100;
     if (price < 0.50 || price > 10000 || isJunk(title)) return;
-    if (isSecret && !title.toLowerCase().includes(cardName.split(' ')[0].toLowerCase())) return;
+
+    // Verify the listing is actually for this specific card
+    if (!isTitleRelevant(title, cardName, cardNumber, setTotal)) return;
 
     const sale = {
       title, price,
