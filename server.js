@@ -112,9 +112,21 @@ function buildQuery(cardName, cardNumber, setTotal) {
   const isSecret = cardNumber && setTotal && !isNaN(num) && !isNaN(total) && num > total;
   const hasNum   = cardNumber && setTotal && !isNaN(num) && !isNaN(total) && num <= total;
 
-  if (isSecret)  return { query: `${cardName} ${cardNumber}`, isSecret, hasNum };
-  if (hasNum)    return { query: `${cardName} ${cardNumber}/${setTotal}`, isSecret, hasNum };
-  return           { query: cardName, isSecret: false, hasNum: false };
+  // Detect promo cards — card number contains letters (SWSH001, SM01, XY01, 44a etc.)
+  // OR the set total is very large (200+) which typically indicates a promo set
+  // where sellers NEVER write the /total format
+  const isPromo  = cardNumber && /[a-zA-Z]/.test(cardNumber);
+  const isLargeSet = hasNum && total >= 200;
+
+  if (isSecret || isPromo || isLargeSet) {
+    // Use number only — no /total — sellers just write "Charmander 44" or "Pikachu SWSH001"
+    return { query: cardNumber ? `${cardName} ${cardNumber}` : cardName, isSecret, hasNum, isPromo };
+  }
+  if (hasNum) {
+    // Standard set card — include number/total as sellers consistently use this format
+    return { query: `${cardName} ${cardNumber}/${setTotal}`, isSecret, hasNum, isPromo: false };
+  }
+  return { query: cardName, isSecret: false, hasNum: false, isPromo: false };
 }
 
 // ─── Outlier removal (IQR) ────────────────────────────────────────────────────
