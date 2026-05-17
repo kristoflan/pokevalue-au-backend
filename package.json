@@ -1,6 +1,6 @@
 {
   "name": "pokevalue-au-backend",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "description": "PokéValue AU — eBay pricing backend for Australian Pokémon card collectors",
   "main": "server.js",
   "scripts": {

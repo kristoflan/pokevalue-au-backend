@@ -24,89 +24,50 @@
     }
     .app-shell { width: 100%; max-width: 430px; background: var(--bg); min-height: 100vh; }
 
-    /* ── Header ── */
-    .app-header {
-      padding: 14px 16px; display: flex; align-items: center; gap: 12px;
-      position: sticky; top: 0; z-index: 10;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.25);
-      transition: background 0.3s;
-    }
+    /* Header */
+    .app-header { padding: 14px 16px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 10px rgba(0,0,0,0.25); transition: background 0.3s; }
     .app-header.en { background: var(--red); }
     .app-header.jp { background: var(--jp); }
-    .pokeball {
-      width: 34px; height: 34px; background: white; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0; box-shadow: 0 0 0 3px rgba(255,255,255,0.25);
-    }
+    .pokeball { width: 34px; height: 34px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 0 3px rgba(255,255,255,0.25); }
     .pokeball-inner { width: 13px; height: 13px; border-radius: 50%; border: 2.5px solid #222; transition: background 0.3s; }
     .app-header.en .pokeball-inner { background: var(--red); }
     .app-header.jp .pokeball-inner { background: var(--jp); }
     .header-text { flex: 1; }
     .header-text h1 { font-size: 18px; font-weight: 700; color: white; }
     .header-text span { font-size: 11px; color: rgba(255,255,255,0.68); margin-top: 1px; display: block; }
-
-    /* ── Language toggle ── */
-    .lang-toggle {
-      display: flex; background: rgba(255,255,255,0.2);
-      border-radius: 20px; padding: 3px; gap: 2px; flex-shrink: 0;
-    }
-    .lang-btn {
-      padding: 4px 10px; border-radius: 16px; font-size: 12px; font-weight: 700;
-      border: none; cursor: pointer; transition: all 0.2s; color: rgba(255,255,255,0.7);
-      background: transparent;
-    }
+    .lang-toggle { display: flex; background: rgba(255,255,255,0.2); border-radius: 20px; padding: 3px; gap: 2px; flex-shrink: 0; }
+    .lang-btn { padding: 4px 10px; border-radius: 16px; font-size: 12px; font-weight: 700; border: none; cursor: pointer; transition: all 0.2s; color: rgba(255,255,255,0.7); background: transparent; }
     .lang-btn.active { background: white; color: var(--red); }
     .app-header.jp .lang-btn.active { color: var(--jp); }
 
-    /* ── Search ── */
+    /* Search */
     .search-area { background: var(--surface); padding: 12px 14px 14px; border-bottom: 0.5px solid var(--border); }
     .search-hint { font-size: 11px; color: var(--text-hint); margin-bottom: 8px; }
     .search-row { display: flex; gap: 8px; }
-    .search-row input {
-      flex: 1; height: 42px; padding: 0 14px; font-size: 15px;
-      border: 0.5px solid var(--border-med); border-radius: var(--radius-md);
-      background: var(--surface2); color: var(--text); outline: none;
-      transition: border-color 0.15s, box-shadow 0.15s;
-    }
+    .search-row input { flex: 1; height: 42px; padding: 0 14px; font-size: 15px; border: 0.5px solid var(--border-med); border-radius: var(--radius-md); background: var(--surface2); color: var(--text); outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
     .search-row input:focus { border-color: var(--red); box-shadow: 0 0 0 3px rgba(204,0,0,0.1); background: white; }
-    .search-btn {
-      height: 42px; padding: 0 18px; color: white; border: none;
-      border-radius: var(--radius-md); font-size: 14px; font-weight: 600;
-      cursor: pointer; display: flex; align-items: center; gap: 6px;
-      white-space: nowrap; transition: opacity 0.15s, background 0.3s;
-    }
+    .search-btn { height: 42px; padding: 0 18px; color: white; border: none; border-radius: var(--radius-md); font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap; transition: opacity 0.15s, background 0.3s; }
     .search-btn.en { background: var(--red); }
     .search-btn.jp { background: var(--jp); }
     .search-btn:active { opacity: 0.82; transform: scale(0.98); }
 
-    /* ── Language badge ── */
-    .lang-badge {
-      display: inline-flex; align-items: center; gap: 4px;
-      font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; margin-top: 8px;
-    }
-    .lang-badge.en { background: rgba(204,0,0,0.1); color: var(--red); }
-    .lang-badge.jp { background: rgba(212,56,13,0.1); color: var(--jp); }
-
-    /* ── Results ── */
+    /* Results */
     .results-area { padding: 14px; }
     .status-msg { text-align: center; padding: 50px 24px 40px; color: var(--text-muted); font-size: 14px; line-height: 1.6; }
     .status-msg i { font-size: 44px; display: block; margin-bottom: 14px; opacity: 0.28; color: var(--text); }
     .status-msg strong { display: block; font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
     .results-header { font-size: 12px; color: var(--text-hint); margin-bottom: 12px; padding: 0 2px; line-height: 1.5; }
     .card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-    .card-item {
-      background: var(--surface); border-radius: var(--radius-lg);
-      border: 0.5px solid var(--border); overflow: hidden; cursor: pointer;
-      transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
-    }
+    .card-item { background: var(--surface); border-radius: var(--radius-lg); border: 0.5px solid var(--border); overflow: hidden; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s; }
     .card-item:active { transform: scale(0.98); }
     .card-item:hover { border-color: var(--border-med); box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
     .card-item.selected { border: 2px solid var(--red); box-shadow: 0 2px 14px rgba(204,0,0,0.18); }
-    .card-item.selected.jp-selected { border-color: var(--jp); box-shadow: 0 2px 14px rgba(212,56,13,0.18); }
-    .card-img-wrap { aspect-ratio: 3/4; background: var(--surface2); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .card-item.selected.jp-selected { border-color: var(--jp); }
+    .card-img-wrap { position: relative; aspect-ratio: 3/4; background: var(--surface2); display: flex; align-items: center; justify-content: center; overflow: hidden; }
     .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
     .card-img-wrap .no-img { font-size: 11px; color: var(--text-hint); text-align: center; padding: 12px; }
     .card-img-wrap .no-img i { font-size: 28px; display: block; margin-bottom: 4px; opacity: 0.5; }
+    .stamp-overlay { position: absolute; top: 6px; right: 6px; background: rgba(133,77,14,0.9); color: #fef9c3; font-size: 13px; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
     .card-info { padding: 8px 10px 10px; }
     .card-name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .card-set { font-size: 11px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -114,16 +75,14 @@
     .card-rarity { display: inline-block; font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 4px; margin-top: 5px; background: var(--info-bg); color: var(--info-text); }
     .card-stamp-badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; margin-top: 4px; background: #fef9c3; color: #854d0e; border: 0.5px solid #fde68a; }
     .card-stamp-badge.nostamp { background: #f1f5f9; color: #475569; border-color: #cbd5e1; font-weight: 600; }
-    .stamp-overlay { position: absolute; top: 6px; right: 6px; background: rgba(133,77,14,0.9); color: #fef9c3; font-size: 14px; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-    .card-img-wrap { position: relative; aspect-ratio: 3/4; background: var(--surface2); display: flex; align-items: center; justify-content: center; overflow: hidden; }
 
-    /* ── Skeletons ── */
+    /* Skeletons */
     .loading-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
     .skeleton { background: var(--surface); border-radius: var(--radius-lg); border: 0.5px solid var(--border); aspect-ratio: 3/5; position: relative; overflow: hidden; }
     .skeleton::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.7) 50%, transparent 100%); animation: shimmer 1.4s infinite; }
     @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
 
-    /* ── Detail panel ── */
+    /* Detail panel */
     .detail-panel { background: var(--surface); border-top: 3px solid var(--red); padding: 16px; display: none; }
     .detail-panel.visible { display: block; }
     .detail-panel.jp-mode { border-top-color: var(--jp); }
@@ -133,25 +92,28 @@
     .detail-title { font-size: 17px; font-weight: 700; color: var(--text); line-height: 1.3; }
     .detail-sub { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
     .detail-rarity { display: inline-block; font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 4px; margin-top: 6px; background: var(--info-bg); color: var(--info-text); }
+    .lang-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; margin-top: 6px; }
+    .lang-badge.en { background: rgba(204,0,0,0.1); color: var(--red); }
+    .lang-badge.jp { background: rgba(212,56,13,0.1); color: var(--jp); }
 
-    /* ── Section headers ── */
+    /* Section headers */
     .section-header { display: flex; align-items: center; gap: 9px; padding: 9px 12px; border-radius: var(--radius-md); margin-bottom: 10px; margin-top: 6px; font-size: 13px; font-weight: 700; }
     .section-header i { font-size: 16px; flex-shrink: 0; }
     .section-header .sh-sub { font-size: 11px; font-weight: 400; opacity: 0.8; margin-top: 1px; }
-    .sh-active  { background: #eff6ff; color: #1e40af; border: 0.5px solid #bfdbfe; }
-    .sh-active.jp  { background: #fff1eb; color: var(--jp); border-color: #fed7c3; }
-    .sh-us      { background: #f0f4ff; color: #1d4ed8; border: 0.5px solid #c7d2fe; }
-    .sh-cm      { background: #f0fdf4; color: #166534; border: 0.5px solid #bbf7d0; }
-    .sh-sold    { background: #fff7ed; color: #9a3412; border: 0.5px solid #fed7aa; }
+    .sh-active { background: #eff6ff; color: #1e40af; border: 0.5px solid #bfdbfe; }
+    .sh-active.jp { background: #fff1eb; color: var(--jp); border-color: #fed7c3; }
+    .sh-us { background: #f0f4ff; color: #1d4ed8; border: 0.5px solid #c7d2fe; }
+    .sh-cm { background: #f0fdf4; color: #166534; border: 0.5px solid #bbf7d0; }
+    .sh-sold { background: #fff7ed; color: #9a3412; border: 0.5px solid #fed7aa; }
 
-    /* ── Condition tabs ── */
+    /* Condition tabs */
     .cond-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
     .cond-tab { flex: 1; padding: 7px 0; text-align: center; font-size: 12px; font-weight: 600; border-radius: var(--radius-md); cursor: pointer; border: 0.5px solid var(--border); background: var(--surface2); color: var(--text-muted); transition: all 0.15s; }
     .cond-tab.active { background: var(--red); color: white; border-color: var(--red); }
     .cond-tab.active.jp { background: var(--jp); border-color: var(--jp); }
 
-    /* ── Grade info ── */
-    .grade-info { background: #f8faff; border: 0.5px solid #c7d2fe; border-radius: var(--radius-md); padding: 10px 12px; margin-bottom: 10px; font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+    /* Grade info */
+    .grade-info { background: #f8faff; border: 0.5px solid #c7d2fe; border-radius: var(--radius-md); padding: 10px 12px; margin-bottom: 10px; }
     .grade-info-header { display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; }
     .grade-info-header span { font-size: 12px; font-weight: 600; color: #4338ca; display: flex; align-items: center; gap: 5px; }
     .grade-info-header .toggle-icon { font-size: 14px; color: #4338ca; transition: transform 0.2s; }
@@ -165,43 +127,43 @@
     .grade-info-body { display: none; }
     .grade-info-body.open { display: block; }
 
-    /* ── Price box ── */
+    /* Price box */
     .price-box { background: var(--surface2); border-radius: var(--radius-md); padding: 14px; margin-bottom: 12px; border: 0.5px solid var(--border); }
     .price-main { font-size: 32px; font-weight: 700; color: var(--text); line-height: 1; margin-bottom: 4px; }
     .price-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
     .trend-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; margin-bottom: 10px; }
-    .trend-up   { background: var(--success-bg); color: var(--success-text); }
+    .trend-up { background: var(--success-bg); color: var(--success-text); }
     .trend-flat { background: var(--surface); color: var(--text-hint); border: 0.5px solid var(--border); }
     .price-stats { display: flex; gap: 6px; flex-wrap: wrap; }
     .stat-chip { background: var(--surface); border: 0.5px solid var(--border); border-radius: 6px; padding: 5px 9px; font-size: 11px; color: var(--text-muted); text-align: center; min-width: 56px; }
     .stat-chip strong { display: block; font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 1px; }
 
-    /* ── Listings ── */
+    /* Listings */
     .listings-label { font-size: 11px; font-weight: 600; color: var(--text-hint); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 7px; margin-top: 12px; }
     .listings-scroll { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
     .listings-scroll::-webkit-scrollbar { height: 3px; }
     .listings-scroll::-webkit-scrollbar-thumb { background: var(--border-med); border-radius: 2px; }
-    .listing-chip { flex-shrink: 0; min-width: 70px; background: var(--surface); border: 0.5px solid var(--border); border-radius: 8px; padding: 6px 10px; text-align: center; text-decoration: none; transition: border-color 0.15s; }
+    .listing-chip { flex-shrink: 0; min-width: 70px; background: var(--surface); border: 0.5px solid var(--border); border-radius: 8px; padding: 6px 10px; text-align: center; text-decoration: none; transition: border-color 0.15s; display: block; }
     .listing-chip:hover { border-color: var(--red); }
     .listing-chip .lc-price { font-size: 13px; font-weight: 700; color: var(--text); }
     .listing-chip .lc-label { font-size: 10px; color: var(--text-hint); margin-top: 1px; }
 
-    /* ── No data / loading ── */
+    /* No data / loading */
     .no-data { background: var(--warn-bg); border-radius: var(--radius-md); padding: 11px 13px; margin-bottom: 12px; font-size: 13px; color: var(--warn-text); border: 0.5px solid rgba(0,0,0,0.07); }
     .price-loading { background: var(--surface2); border-radius: var(--radius-md); padding: 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 12px; color: var(--text-muted); font-size: 13px; border: 0.5px solid var(--border); }
     .spinner { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; border: 2px solid var(--border); border-top-color: var(--red); animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── Buttons ── */
+    /* Buttons */
     .btn-row { display: flex; gap: 8px; margin-top: 4px; }
     .btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px; padding: 11px; border: none; border-radius: var(--radius-md); font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; transition: opacity 0.15s; }
     .btn:active { opacity: 0.82; transform: scale(0.98); }
-    .btn-red  { background: var(--red); color: white; }
-    .btn-jp   { background: var(--jp); color: white; }
+    .btn-red { background: var(--red); color: white; }
+    .btn-jp { background: var(--jp); color: white; }
     .btn-blue { background: #1d4ed8; color: white; }
     .btn-ghost { background: var(--surface2); color: var(--text-muted); border: 0.5px solid var(--border); }
 
-    /* ── Toast ── */
+    /* Toast */
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(90px); background: #1a1a1a; color: white; padding: 10px 18px; border-radius: var(--radius-md); font-size: 13px; transition: transform 0.3s; z-index: 100; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.25); }
     .toast.show { transform: translateX(-50%) translateY(0); }
   </style>
@@ -209,7 +171,6 @@
 <body>
 <div class="app-shell">
 
-  <!-- Header -->
   <div class="app-header en" id="appHeader">
     <div class="pokeball"><div class="pokeball-inner" id="pokeballInner"></div></div>
     <div class="header-text">
@@ -222,9 +183,8 @@
     </div>
   </div>
 
-  <!-- Search -->
   <div class="search-area">
-    <div class="search-hint" id="searchHint">Search by name — e.g. "Charizard" or "Umbreon"</div>
+    <div class="search-hint" id="searchHint">Search by name — e.g. "Charizard" or "Umbreon Prismatic"</div>
     <div class="search-row">
       <input type="text" id="searchInput" placeholder="Card name..." autocomplete="off" />
       <button class="search-btn en" id="searchBtn" onclick="doSearch()">
@@ -233,16 +193,14 @@
     </div>
   </div>
 
-  <!-- Results -->
   <div class="results-area" id="resultsArea">
     <div class="status-msg">
       <i class="ti ti-cards"></i>
       <strong>Find any Pokémon card</strong>
-      Use the <strong>EN</strong> / <strong>JP</strong> toggle to switch between English and Japanese cards, then search by name.
+      Use EN / JP to switch languages. Search by name — include set or number for precision.
     </div>
   </div>
 
-  <!-- Detail panel -->
   <div class="detail-panel" id="detailPanel">
     <div class="detail-header">
       <div class="detail-img"><img id="detailImg" src="" alt="" /></div>
@@ -269,12 +227,13 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  const BACKEND    = 'https://pokevalue-au-backend.onrender.com';
-  const TCG_EN     = 'https://api.pokemontcg.io/v2';
-  const TCG_JP     = 'https://www.tcgdex.net/api/v2/ja';
+  const BACKEND = 'https://pokevalue-au-backend.onrender.com';
+  const TCG_EN  = 'https://api.pokemontcg.io/v2';
 
-  let currentLang  = 'en';
-  let activeCond   = 'nm';
+  const STAMP_PROMO_SETS = ['svp', 'swshp', 'smp', 'xyp', 'bwp', 'np'];
+
+  let currentLang = 'en';
+  let activeCond  = 'nm';
 
   const searchInput = document.getElementById('searchInput');
   const resultsArea = document.getElementById('resultsArea');
@@ -289,100 +248,81 @@
     setTimeout(() => t.classList.remove('show'), 3000);
   }
 
-  // ── Language toggle ───────────────────────────────────────────────────────
+  // ── Language toggle ─────────────────────────────────────────────────────────
   function setLang(lang) {
     currentLang = lang;
     const isJP  = lang === 'jp';
-
-    document.getElementById('appHeader').className    = `app-header ${lang}`;
-    document.getElementById('searchBtn').className    = `search-btn ${lang}`;
+    document.getElementById('appHeader').className   = `app-header ${lang}`;
+    document.getElementById('searchBtn').className   = `search-btn ${lang}`;
     document.getElementById('btnEN').classList.toggle('active', !isJP);
     document.getElementById('btnJP').classList.toggle('active', isJP);
-    document.getElementById('headerSub').textContent  = isJP
+    document.getElementById('headerSub').textContent = isJP
       ? 'Japanese Pokémon card prices · AU market'
       : 'Australian Pokémon card prices';
     document.getElementById('searchHint').textContent = isJP
-      ? 'Search Japanese cards by name — e.g. "リザードン" or "Charizard"'
-      : 'Search by name — e.g. "Charizard" or "Umbreon"';
+      ? 'Search Japanese cards by name — e.g. "Charizard" or "リザードン"'
+      : 'Search by name — e.g. "Charizard" or "Umbreon Prismatic"';
     searchInput.placeholder = isJP ? 'Japanese card name...' : 'Card name...';
-
-    // Clear results when switching language
     resultsArea.innerHTML = `<div class="status-msg">
       <i class="ti ti-cards"></i>
       <strong>${isJP ? 'Search Japanese cards' : 'Find any Pokémon card'}</strong>
-      ${isJP ? 'Search by English or Japanese name to find Japanese card editions.' : 'Use the EN / JP toggle to switch between English and Japanese cards, then search by name.'}
+      ${isJP ? 'Search by English or Japanese name.' : 'Include set name or number for precision.'}
     </div>`;
     detailPanel.classList.remove('visible');
   }
 
-  // ── Search ────────────────────────────────────────────────────────────────
+  // ── Search dispatcher ────────────────────────────────────────────────────────
   async function doSearch() {
     const q = searchInput.value.trim();
     if (!q) { showToast('Enter a card name to search'); return; }
-
     resultsArea.innerHTML = '<div class="loading-grid">' + Array(6).fill('<div class="skeleton"></div>').join('') + '</div>';
     detailPanel.classList.remove('visible');
-
-    if (currentLang === 'jp') {
-      await searchJapanese(q);
-    } else {
-      await searchEnglish(q);
-    }
+    currentLang === 'jp' ? await searchJapanese(q) : await searchEnglish(q);
   }
 
-  // ── English search (pokemontcg.io) ───────────────────────────────────────
-  // Also extracts number hints from query (e.g. "Charmander 44") and tries
-  // multiple number formats to catch promo cards stored as SVP044 etc.
+  // ── English search ──────────────────────────────────────────────────────────
   async function searchEnglish(q) {
     const { namePart, detectedSet, matchedSetName } = parseSearchQuery(q);
 
-    // Extract a trailing number from the query if present (e.g. "Charmander 44" → "44")
-    const numberMatch = namePart.match(/(\d{1,4})/);
-    const numberHint  = numberMatch ? numberMatch[1] : null;
-    // Build the clean name without the number
-    const cleanName   = numberHint ? namePart.replace(numberHint, '').trim() : namePart;
+    // Extract trailing number hint e.g. "Charmander 44" → number="44", name="Charmander"
+    const numMatch  = namePart.match(/\b(\d{1,4})\b/);
+    const numHint   = numMatch ? numMatch[1] : null;
+    const cleanName = numHint ? namePart.replace(numHint, '').trim() : namePart;
+    const baseName  = cleanName || namePart;
 
-    // Build queries — try name only first, then name+number variants
-    const queries = [];
-    let baseQuery = `name:"${cleanName || namePart}*"`;
+    let baseQuery = `name:"${baseName}*"`;
     if (detectedSet) baseQuery += ` set.id:${detectedSet.id}`;
-    queries.push(baseQuery);
 
-    // If a number was detected, also try number-specific searches
-    if (numberHint) {
-      const padded = numberHint.padStart(3, '0'); // "44" -> "044"
-      // Try number field directly
-      queries.push(`name:"${cleanName || namePart}*" number:"${numberHint}"`);
-      queries.push(`name:"${cleanName || namePart}*" number:"${padded}"`);
+    // Run multiple queries to catch promo number formats (SVP044 vs 44)
+    const queries = [baseQuery];
+    if (numHint) {
+      const padded = numHint.padStart(3, '0');
+      queries.push(`name:"${baseName}*" number:"${numHint}"`);
+      queries.push(`name:"${baseName}*" number:"${padded}"`);
     }
 
     try {
-      // Run queries in parallel, merge and deduplicate results
       const allResults = await Promise.all(
         queries.map(query =>
           fetch(`${TCG_EN}/cards?q=${encodeURIComponent(query)}&pageSize=24&orderBy=-set.releaseDate`)
-            .then(r => r.json())
-            .then(d => d.data || [])
-            .catch(() => [])
+            .then(r => r.json()).then(d => d.data || []).catch(() => [])
         )
       );
 
-      // Deduplicate by card id
+      // Deduplicate by card ID
       const seen = new Set();
       let cards = allResults.flat().filter(card => {
         if (seen.has(card.id)) return false;
-        seen.add(card.id);
-        return true;
+        seen.add(card.id); return true;
       });
-
-      // Sort by release date descending
       cards.sort((a, b) => new Date(b.set?.releaseDate || 0) - new Date(a.set?.releaseDate || 0));
       cards = cards.slice(0, 24);
 
       // Synthesise stamp variants for promo cards
       cards = synthesiseStampVariants(cards);
 
-      const hint = matchedSetName ? ` · set: <span style="color:var(--red);font-weight:600">${matchedSetName}</span>` : '';
+      const hint = matchedSetName
+        ? ` · set: <span style="color:var(--red);font-weight:600">${matchedSetName}</span>` : '';
       renderResults(cards, hint, 'en');
     } catch(err) {
       console.error('EN search error:', err);
@@ -390,19 +330,10 @@
     }
   }
 
-  // ── Stamp variant synthesiser ─────────────────────────────────────────────
-  // For promo cards that have known stamp variants (Pokemon Center stamp etc.),
-  // we duplicate the card entry and tag one as stamped and one as unstamped.
-  // The eBay pricing query is adjusted accordingly for each variant.
-  const STAMP_PROMO_SETS = ['svp', 'swshp', 'smp', 'xyp', 'bwp', 'np', 'dp'];
-  const STAMP_PROMO_SETS_RENDER = STAMP_PROMO_SETS; // alias for use in renderResults
-
+  // ── Stamp variant synthesiser ───────────────────────────────────────────────
   function isStampablePromo(card) {
-    const setId   = (card.set?.id || '').toLowerCase();
-    const setName = (card.set?.name || '').toLowerCase();
-    return STAMP_PROMO_SETS.some(s => setId.startsWith(s)) ||
-           setName.includes('black star') ||
-           setName.includes('promo');
+    const setId = (card.set?.id || '').toLowerCase();
+    return STAMP_PROMO_SETS.some(s => setId.startsWith(s));
   }
 
   function synthesiseStampVariants(cards) {
@@ -416,7 +347,7 @@
     return result;
   }
 
-  // ── Japanese search (via backend proxy — avoids CORS) ────────────────────
+  // ── Japanese search ──────────────────────────────────────────────────────────
   async function searchJapanese(q) {
     try {
       const res = await fetch(`${BACKEND}/jp-search?name=${encodeURIComponent(q)}`);
@@ -433,41 +364,38 @@
     }
   }
 
-  // ── Render results (handles both EN and JP card shapes) ──────────────────
+  // ── Render results ──────────────────────────────────────────────────────────
   function renderResults(cards, hint, lang) {
     if (!cards.length) {
       resultsArea.innerHTML = `<div class="status-msg"><i class="ti ti-mood-sad"></i><strong>No cards found</strong>Try a different name.</div>`;
       return;
     }
-
-    resultsArea.innerHTML = `<div class="results-header">${cards.length} card${cards.length !== 1 ? 's' : ''} found${hint} — tap to see AU pricing</div>`;
+    resultsArea.innerHTML = `<div class="results-header">${cards.length} result${cards.length !== 1 ? 's' : ''}${hint} — tap to see AU pricing</div>`;
     const grid = document.createElement('div');
     grid.className = 'card-grid';
 
     cards.forEach(card => {
-      const el    = document.createElement('div');
-      el.className = 'card-item';
-
-      // Normalise EN vs JP card shape
-      const name   = card.name || '—';
+      const el      = document.createElement('div');
+      el.className  = 'card-item';
+      const name    = card.name || '—';
       const setName = lang === 'en' ? (card.set?.name || '') : (card.set?.name || card.set || '');
-      const num    = lang === 'en' ? (card.number || '?') : (card.localId || card.number || '?');
-      const rarity = lang === 'en' ? card.rarity : (card.rarity || '');
-      const imgSrc = lang === 'en'
+      const num     = lang === 'en' ? (card.number || '?') : (card.localId || card.number || '?');
+      const rarity  = lang === 'en' ? (card.rarity || '') : (card.rarity || '');
+      const imgSrc  = lang === 'en'
         ? (card.images?.small || '')
         : (card.image ? `${card.image}/low.webp` : '');
 
-      // Stamp badge for promo variants
-      const stampBadge = card._stampVariant === 'pokemon_center'
+      const isPC    = card._stampVariant === 'pokemon_center';
+      const isPlain = card._stampVariant === 'none' && isStampablePromo(card);
+
+      const stampBadge = isPC
         ? `<div class="card-stamp-badge">⭐ PC Stamp</div>`
-        : card._stampVariant === 'none' && lang === 'en' && card.set?.id && STAMP_PROMO_SETS_RENDER.some(s => card.set.id.toLowerCase().startsWith(s))
-        ? `<div class="card-stamp-badge nostamp">No Stamp</div>`
-        : '';
+        : isPlain ? `<div class="card-stamp-badge nostamp">No Stamp</div>` : '';
 
       el.innerHTML = `
         <div class="card-img-wrap">
           ${imgSrc ? `<img src="${imgSrc}" alt="${name}" loading="lazy" />` : `<div class="no-img"><i class="ti ti-photo-off"></i>No image</div>`}
-          ${card._stampVariant === 'pokemon_center' ? '<div class="stamp-overlay">⭐</div>' : ''}
+          ${isPC ? '<div class="stamp-overlay">⭐</div>' : ''}
         </div>
         <div class="card-info">
           <div class="card-name">${name}</div>
@@ -479,60 +407,54 @@
       el.addEventListener('click', () => lang === 'en' ? selectCardEN(card, el) : selectCardJP(card, el));
       grid.appendChild(el);
     });
-
     resultsArea.appendChild(grid);
   }
 
-  // ── Select English card ───────────────────────────────────────────────────
+  // ── Select English card ─────────────────────────────────────────────────────
   async function selectCardEN(card, el) {
     document.querySelectorAll('.card-item').forEach(c => c.classList.remove('selected', 'jp-selected'));
     el.classList.add('selected');
 
-    document.getElementById('detailImg').src         = card.images?.large || card.images?.small || '';
-    document.getElementById('detailName').textContent = card.name;
-    document.getElementById('detailSet').textContent  = card.set?.name || '';
-    document.getElementById('detailNum').textContent  = `#${card.number || '?'} · ${card.set?.series || ''}`;
+    document.getElementById('detailImg').src          = card.images?.large || card.images?.small || '';
+    document.getElementById('detailName').textContent  = card.name;
+    document.getElementById('detailSet').textContent   = card.set?.name || '';
+    document.getElementById('detailNum').textContent   = `#${card.number || '?'} · ${card.set?.series || ''}`;
     document.getElementById('detailRarity').textContent = card.rarity || '';
-
-    // Show stamp variant label in detail panel
-    const existingStampLabel = document.getElementById('detailStampLabel');
-    if (existingStampLabel) existingStampLabel.remove();
-    if (card._stampVariant === 'pokemon_center') {
-      const stampLabel = document.createElement('div');
-      stampLabel.id = 'detailStampLabel';
-      stampLabel.style.cssText = 'display:inline-block;background:#854d0e;color:#fef9c3;font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;margin-top:6px;';
-      stampLabel.textContent = '⭐ Pokemon Center Stamp';
-      document.getElementById('detailRarity').after(stampLabel);
-    } else if (card._stampVariant === 'none' && isStampablePromoCard(card)) {
-      const stampLabel = document.createElement('div');
-      stampLabel.id = 'detailStampLabel';
-      stampLabel.style.cssText = 'display:inline-block;background:#f1f5f9;color:#475569;font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;margin-top:6px;border:0.5px solid #cbd5e1;';
-      stampLabel.textContent = 'No Stamp (Regular)';
-      document.getElementById('detailRarity').after(stampLabel);
-    }
     document.getElementById('detailPanel').classList.remove('jp-mode');
 
     const badge = document.getElementById('detailLangBadge');
     badge.className = 'lang-badge en';
     badge.innerHTML = '<i class="ti ti-language"></i> English';
 
-    const numPart  = buildEbayNum(card.number, card.set?.printedTotal || card.set?.total, false);
+    // Remove old stamp label if any
+    document.getElementById('detailStampLabel')?.remove();
     const stampVariant = card._stampVariant || 'none';
-    // Adjust eBay search based on stamp variant
-    let ebayBase = `${card.name} ${numPart}`.trim();
     if (stampVariant === 'pokemon_center') {
-      ebayBase += ' pokemon center stamp';
-    } else if (stampVariant === 'none' && isStampablePromoCard(card)) {
-      ebayBase += ' -stamp -"pokemon center"';
+      const sl = document.createElement('div');
+      sl.id = 'detailStampLabel';
+      sl.style.cssText = 'display:inline-block;background:#854d0e;color:#fef9c3;font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;margin-top:6px;margin-left:4px;';
+      sl.textContent = '⭐ Pokemon Center Stamp';
+      badge.after(sl);
+    } else if (stampVariant === 'none' && isStampablePromo(card)) {
+      const sl = document.createElement('div');
+      sl.id = 'detailStampLabel';
+      sl.style.cssText = 'display:inline-block;background:#f1f5f9;color:#475569;font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;margin-top:6px;margin-left:4px;border:0.5px solid #cbd5e1;';
+      sl.textContent = 'No Stamp (Regular)';
+      badge.after(sl);
     }
+
+    // Build eBay URLs with stamp context
+    const numPart = buildEbayNum(card.number, card.set?.printedTotal || card.set?.total);
+    const isPromo = isPromoCard(card.set?.name || '', card.number || '');
+    let ebayBase  = `${card.name} ${numPart}`.trim();
+    if (stampVariant === 'pokemon_center') ebayBase += ' pokemon center stamp';
     const q = encodeURIComponent(ebayBase);
     document.getElementById('ebayActiveBtn').href = `https://www.ebay.com.au/sch/i.html?_nkw=${q}&_sop=10&LH_PrefLoc=1`;
     document.getElementById('ebaySoldBtn').href   = `https://www.ebay.com.au/sch/i.html?_nkw=${q}&LH_Sold=1&LH_Complete=1&LH_ItemCondition=3&_sop=13&LH_PrefLoc=1`;
     document.getElementById('ebayActiveBtn').className = 'btn btn-red';
 
     const tcgp = card.tcgplayer?.prices ? {
-      url: card.tcgplayer?.url,
-      updatedAt: card.tcgplayer?.updatedAt,
+      url: card.tcgplayer?.url, updatedAt: card.tcgplayer?.updatedAt,
       holofoil:             card.tcgplayer.prices.holofoil             || null,
       normal:               card.tcgplayer.prices.normal               || null,
       reverseHolofoil:      card.tcgplayer.prices.reverseHolofoil      || null,
@@ -542,10 +464,9 @@
 
     showPricingLoader();
 
-    const isPromo = isPromoCard(card.set?.name || '', card.number || '');
     try {
-      const const stampVariant = card._stampVariant || 'none';
-      res  = await fetch(`${BACKEND}/price?name=${encodeURIComponent(card.name)}&number=${encodeURIComponent(card.number || '')}&total=${encodeURIComponent(card.set?.printedTotal || card.set?.total || '')}&isPromo=${isPromo}&stamp=${encodeURIComponent(stampVariant)}`);
+      const res  = await fetch(`${BACKEND}/price?name=${encodeURIComponent(card.name)}&number=${encodeURIComponent(card.number || '')}&total=${encodeURIComponent(card.set?.printedTotal || card.set?.total || '')}&isPromo=${isPromo}&stamp=${encodeURIComponent(stampVariant)}`);
+      if (!res.ok) throw new Error();
       const data = await res.json();
       renderPricingEN(data, tcgp, card.rarity || '', card.set?.name || '');
     } catch {
@@ -553,7 +474,7 @@
     }
   }
 
-  // ── Select Japanese card ──────────────────────────────────────────────────
+  // ── Select Japanese card ────────────────────────────────────────────────────
   async function selectCardJP(card, el) {
     document.querySelectorAll('.card-item').forEach(c => c.classList.remove('selected', 'jp-selected'));
     el.classList.add('selected', 'jp-selected');
@@ -564,32 +485,15 @@
     document.getElementById('detailSet').textContent   = card.set?.name || card.set || '';
     document.getElementById('detailNum').textContent   = `#${card.localId || card.number || '?'} · Japanese`;
     document.getElementById('detailRarity').textContent = card.rarity || '';
-
-    // Show stamp variant label in detail panel
-    const existingStampLabel = document.getElementById('detailStampLabel');
-    if (existingStampLabel) existingStampLabel.remove();
-    if (card._stampVariant === 'pokemon_center') {
-      const stampLabel = document.createElement('div');
-      stampLabel.id = 'detailStampLabel';
-      stampLabel.style.cssText = 'display:inline-block;background:#854d0e;color:#fef9c3;font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;margin-top:6px;';
-      stampLabel.textContent = '⭐ Pokemon Center Stamp';
-      document.getElementById('detailRarity').after(stampLabel);
-    } else if (card._stampVariant === 'none' && isStampablePromoCard(card)) {
-      const stampLabel = document.createElement('div');
-      stampLabel.id = 'detailStampLabel';
-      stampLabel.style.cssText = 'display:inline-block;background:#f1f5f9;color:#475569;font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;margin-top:6px;border:0.5px solid #cbd5e1;';
-      stampLabel.textContent = 'No Stamp (Regular)';
-      document.getElementById('detailRarity').after(stampLabel);
-    }
     document.getElementById('detailPanel').classList.add('jp-mode');
+    document.getElementById('detailStampLabel')?.remove();
 
     const badge = document.getElementById('detailLangBadge');
     badge.className = 'lang-badge jp';
-    badge.innerHTML = '<i class="ti ti-language"></i> 日本語 Japanese';
+    badge.innerHTML = '<i class="ti ti-language"></i> 日本語';
 
-    // eBay AU search for Japanese version
     const cardNum = card.localId || card.number || '';
-    const q = encodeURIComponent(`${card.name} ${cardNum} japanese pokemon`.trim());
+    const q       = encodeURIComponent(`${card.name} ${cardNum} japanese`.trim());
     document.getElementById('ebayActiveBtn').href = `https://www.ebay.com.au/sch/i.html?_nkw=${q}&_sop=10&LH_PrefLoc=1`;
     document.getElementById('ebaySoldBtn').href   = `https://www.ebay.com.au/sch/i.html?_nkw=${q}&LH_Sold=1&LH_Complete=1&_sop=13&LH_PrefLoc=1`;
     document.getElementById('ebayActiveBtn').className = 'btn btn-jp';
@@ -597,17 +501,15 @@
     showPricingLoader();
 
     try {
-      // Fetch AU eBay pricing with japanese flag
-      const res  = await fetch(`${BACKEND}/price?name=${encodeURIComponent(card.name)}&number=${encodeURIComponent(cardNum)}&total=&isPromo=false&isJapanese=true`);
+      const searchName = `${card.name} japanese`;
+      const res  = await fetch(`${BACKEND}/price?name=${encodeURIComponent(searchName)}&number=${encodeURIComponent(cardNum)}&total=&isPromo=false&isJapanese=true&stamp=none`);
+      if (!res.ok) throw new Error();
       const data = await res.json();
-
-      // Pricing comes from card object (returned by our backend proxy)
       const cm   = card.pricing?.cardmarket || null;
       const tcgp = card.pricing?.tcgplayer  || null;
-
       renderPricingJP(data, cm, tcgp);
     } catch {
-      document.getElementById('pricingSection').innerHTML = `<div class="no-data">⚠️ Could not fetch eBay AU pricing. Check your connection.</div>`;
+      document.getElementById('pricingSection').innerHTML = `<div class="no-data">⚠️ Could not fetch eBay AU pricing.</div>`;
     }
   }
 
@@ -617,30 +519,22 @@
     detailPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
-  function isStampablePromoCard(card) {
-    const setId = (card.set?.id || '').toLowerCase();
-    return STAMP_PROMO_SETS.some(s => setId.startsWith(s));
-  }
-
+  // ── Helpers ─────────────────────────────────────────────────────────────────
   function isPromoCard(setName, cardNumber) {
     return setName.toLowerCase().includes('promo') ||
            setName.toLowerCase().includes('black star') ||
            /[a-zA-Z]/.test(cardNumber);
   }
 
-  function buildEbayNum(number, total, isJP) {
+  function buildEbayNum(number, total) {
     if (!number) return '';
-    const num   = parseInt(number, 10);
-    const tot   = parseInt(total,  10);
-    const isSecret = total && !isNaN(num) && !isNaN(tot) && num > tot;
-    const isLarge  = total && !isNaN(tot) && tot >= 200;
-    if (isJP || isSecret || isLarge || /[a-zA-Z]/.test(number)) return number;
-    if (total && !isNaN(num) && !isNaN(tot)) return `${number}/${total}`;
-    return number;
+    const num = parseInt(number, 10);
+    const tot = parseInt(total, 10);
+    if (!total || isNaN(tot) || tot >= 200 || num > tot || /[a-zA-Z]/.test(number)) return number;
+    return `${number}/${total}`;
   }
 
-  // ── Price block builder ───────────────────────────────────────────────────
+  // ── Price block ─────────────────────────────────────────────────────────────
   function priceBlock(data) {
     if (!data) return `<div class="no-data">No listings found for this condition right now.</div>`;
     const trend = data.isTrending
@@ -671,7 +565,7 @@
     return html;
   }
 
-  // ── Render English pricing ────────────────────────────────────────────────
+  // ── Render English pricing ──────────────────────────────────────────────────
   function renderPricingEN(data, tcgp, rarity, setName) {
     const section = document.getElementById('pricingSection');
     const active  = data.active || {};
@@ -685,8 +579,7 @@
       </div>`;
 
     if (hasMint || hasNM) {
-      const showBoth = hasMint && hasNM;
-      if (showBoth) {
+      if (hasMint && hasNM) {
         html += `<div class="cond-tabs" id="condTabs">
           <div class="cond-tab ${activeCond === 'nm' ? 'active' : ''}" onclick="switchCond('nm')">Near Mint (NM)</div>
           <div class="cond-tab ${activeCond === 'mint' ? 'active' : ''}" onclick="switchCond('mint')">Mint (M)</div>
@@ -705,11 +598,11 @@
             <table class="grade-table">
               <tr><th>Raw Condition</th><th>PSA Equiv.</th><th>What it means</th></tr>
               <tr><td><span class="raw-badge">Mint (M)</span></td><td><span class="psa-badge">PSA 9</span></td><td>Near perfect, flaws only under magnification</td></tr>
-              <tr><td><span class="raw-badge">NM-Mint</span></td><td><span class="psa-badge">PSA 8–9</span></td><td>Very minor imperfections, strong eye appeal</td></tr>
-              <tr><td><span class="raw-badge">Near Mint (NM)</span></td><td><span class="psa-badge">PSA 7–8</span></td><td>Slight wear visible on close inspection</td></tr>
-              <tr><td><span class="raw-badge">Lightly Played</span></td><td><span class="psa-badge">PSA 6–7</span></td><td>Minor visible wear on corners or edges</td></tr>
+              <tr><td><span class="raw-badge">NM-Mint</span></td><td><span class="psa-badge">PSA 8–9</span></td><td>Very minor imperfections</td></tr>
+              <tr><td><span class="raw-badge">Near Mint (NM)</span></td><td><span class="psa-badge">PSA 7–8</span></td><td>Slight wear on close inspection</td></tr>
+              <tr><td><span class="raw-badge">Lightly Played</span></td><td><span class="psa-badge">PSA 6–7</span></td><td>Minor visible wear</td></tr>
             </table>
-            <p style="margin-top:8px;font-size:11px;color:var(--text-hint);">⚠️ Most sellers who list "Near Mint" haven't inspected under magnification — actual grade may vary.</p>
+            <p style="margin-top:8px;font-size:11px;color:var(--text-hint);">⚠️ Most sellers who list "Near Mint" haven't inspected under magnification.</p>
           </div>
         </div>
         <div id="condContent">${priceBlock(activeCond === 'mint' ? active.mint : active.nm)}</div>`;
@@ -717,31 +610,29 @@
       html += `<div class="no-data">⚠️ No active listings found for this card on eBay AU right now.</div>`;
     }
 
-    // TCGPlayer
     if (tcgp) html += buildTCGPlayerBlock(tcgp, rarity, setName);
 
-    // Sold note
     html += `
       <div class="section-header sh-sold" style="margin-top:4px;">
         <i class="ti ti-checklist"></i>
         <div><div>Sold Listings · eBay AU</div><div class="sh-sub">See what buyers actually paid — tap below</div></div>
       </div>
       <div style="font-size:13px;color:var(--text-muted);background:var(--surface2);border-radius:var(--radius-md);padding:12px 14px;margin-bottom:12px;border:0.5px solid var(--border);line-height:1.6;">
-        Tap <strong>Sold listings</strong> below to view recent sales directly on eBay AU, filtered to Australian sellers only.
+        Tap <strong>Sold listings</strong> below to view recent sales from Australian sellers on eBay AU.
       </div>`;
 
     section.innerHTML = html;
     section._activeData = active;
   }
 
-  // ── Render Japanese pricing ───────────────────────────────────────────────
+  // ── Render Japanese pricing ─────────────────────────────────────────────────
   function renderPricingJP(data, cm, tcgp) {
     const section = document.getElementById('pricingSection');
     const active  = data.active || {};
     const hasMint = !!active.mint;
     const hasNM   = !!active.nm;
-    const AUD_RATE = 1.57;
-    const JPY_RATE = 0.0096; // approximate JPY to AUD
+    const EUR_AUD = 1.73;
+    const USD_AUD = 1.57;
 
     let html = `
       <div class="section-header sh-active jp">
@@ -750,23 +641,18 @@
       </div>`;
 
     if (hasMint || hasNM) {
-      const showBoth = hasMint && hasNM;
-      if (showBoth) {
+      if (hasMint && hasNM) {
         html += `<div class="cond-tabs" id="condTabs">
           <div class="cond-tab ${activeCond === 'nm' ? 'active jp' : ''}" onclick="switchCond('nm')">Near Mint (NM)</div>
           <div class="cond-tab ${activeCond === 'mint' ? 'active jp' : ''}" onclick="switchCond('mint')">Mint (M)</div>
         </div>`;
-      } else {
-        activeCond = hasMint ? 'mint' : 'nm';
-      }
+      } else { activeCond = hasMint ? 'mint' : 'nm'; }
       html += `<div id="condContent">${priceBlock(activeCond === 'mint' ? active.mint : active.nm)}</div>`;
     } else {
       html += `<div class="no-data">⚠️ No Japanese card listings found on eBay AU right now.</div>`;
     }
 
-    // Cardmarket EUR pricing (European market reference for JP cards)
-    if (cm) {
-      const eurToAud = 1.73;
+    if (cm?.avg30) {
       html += `
         <div class="section-header sh-cm">
           <i class="ti ti-world"></i>
@@ -775,67 +661,33 @@
         <div class="price-box" style="background:#f0fdf4;border-color:rgba(0,150,80,0.15);">
           <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">Market Average (30 days)</div>
           <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;">
-            <span style="font-size:26px;font-weight:700;color:#1a1a1a;">A$${(cm.avg30 * eurToAud).toFixed(2)}</span>
-            <span style="font-size:12px;color:#94a3b8;">(€${cm.avg30?.toFixed(2)})</span>
+            <span style="font-size:26px;font-weight:700;color:#1a1a1a;">A$${(cm.avg30 * EUR_AUD).toFixed(2)}</span>
+            <span style="font-size:12px;color:#94a3b8;">(€${cm.avg30.toFixed(2)})</span>
           </div>
           <div class="price-stats">
-            ${cm.low   != null ? `<div class="stat-chip"><strong>A$${(cm.low*eurToAud).toFixed(2)}</strong>Low <span style="font-size:9px;color:#94a3b8">(€${cm.low.toFixed(2)})</span></div>` : ''}
-            ${cm.avg   != null ? `<div class="stat-chip"><strong>A$${(cm.avg*eurToAud).toFixed(2)}</strong>Avg <span style="font-size:9px;color:#94a3b8">(€${cm.avg.toFixed(2)})</span></div>` : ''}
-            ${cm.trend != null ? `<div class="stat-chip"><strong>A$${(cm.trend*eurToAud).toFixed(2)}</strong>Trend <span style="font-size:9px;color:#94a3b8">(€${cm.trend.toFixed(2)})</span></div>` : ''}
+            ${cm.low   ? `<div class="stat-chip"><strong>A$${(cm.low*EUR_AUD).toFixed(2)}</strong>Low</div>` : ''}
+            ${cm.avg   ? `<div class="stat-chip"><strong>A$${(cm.avg*EUR_AUD).toFixed(2)}</strong>Avg</div>` : ''}
+            ${cm.trend ? `<div class="stat-chip"><strong>A$${(cm.trend*EUR_AUD).toFixed(2)}</strong>Trend</div>` : ''}
           </div>
-          <div style="font-size:11px;color:#94a3b8;margin-top:10px;">Updated ${cm.updated?.split('T')[0] || '—'} · Cardmarket.com</div>
         </div>`;
     }
 
-    // TCGPlayer USD if available for JP card
-    if (tcgp) {
-      const types = ['normal', 'reverse'].filter(k => tcgp[k]?.marketPrice);
-      if (types.length) {
-        html += `
-          <div class="section-header sh-us">
-            <i class="ti ti-world"></i>
-            <div><div>🇺🇸 US Market · TCGPlayer</div><div class="sh-sub">USD prices converted to AUD</div></div>
-          </div>
-          <div class="price-box" style="background:#f0f4ff;border-color:rgba(0,80,200,0.15);">`;
-        types.forEach((k, i) => {
-          const p   = tcgp[k];
-          const aud = (p.marketPrice * AUD_RATE).toFixed(2);
-          html += `
-            <div style="${i > 0 ? 'margin-top:10px;padding-top:10px;border-top:0.5px solid rgba(0,0,0,0.07)' : ''}">
-              <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">${k === 'normal' ? 'Normal' : 'Reverse Holo'}</div>
-              <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;">
-                <span style="font-size:22px;font-weight:700;color:#1a1a1a;">A$${aud}</span>
-                <span style="font-size:12px;color:#94a3b8;">(US$${p.marketPrice.toFixed(2)})</span>
-              </div>
-              <div class="price-stats">
-                ${p.lowPrice    ? `<div class="stat-chip"><strong>A$${(p.lowPrice*AUD_RATE).toFixed(2)}</strong>Low</div>` : ''}
-                ${p.midPrice    ? `<div class="stat-chip"><strong>A$${(p.midPrice*AUD_RATE).toFixed(2)}</strong>Mid</div>` : ''}
-                ${p.marketPrice ? `<div class="stat-chip"><strong>A$${(p.marketPrice*AUD_RATE).toFixed(2)}</strong>Market</div>` : ''}
-                ${p.highPrice   ? `<div class="stat-chip"><strong>A$${(p.highPrice*AUD_RATE).toFixed(2)}</strong>High</div>` : ''}
-              </div>
-            </div>`;
-        });
-        html += `</div>`;
-      }
-    }
-
-    // Sold note
     html += `
       <div class="section-header sh-sold" style="margin-top:4px;">
         <i class="ti ti-checklist"></i>
         <div><div>Sold Listings · eBay AU</div><div class="sh-sub">See what buyers paid — tap below</div></div>
       </div>
       <div style="font-size:13px;color:var(--text-muted);background:var(--surface2);border-radius:var(--radius-md);padding:12px 14px;margin-bottom:12px;border:0.5px solid var(--border);line-height:1.6;">
-        Tap <strong>Sold listings</strong> below to see recent Japanese card sales from Australian sellers on eBay AU.
+        Tap <strong>Sold listings</strong> to see recent Japanese card sales from Australian sellers.
       </div>`;
 
     section.innerHTML = html;
     section._activeData = active;
   }
 
-  // ── TCGPlayer block (English cards) ──────────────────────────────────────
+  // ── TCGPlayer block ─────────────────────────────────────────────────────────
   function buildTCGPlayerBlock(tcgp, rarity, setName) {
-    const USD_TO_AUD = 1.57;
+    const USD_AUD = 1.57;
     const r = rarity.toLowerCase();
     const s = setName.toLowerCase();
     const is1st    = s.includes('base set') || s.includes('shadowless');
@@ -848,8 +700,8 @@
     else if (isCommon)     order = ['normal','reverseHolofoil','firstEditionNormal','holofoil','firstEditionHolofoil'];
     else                   order = ['holofoil','firstEditionHolofoil','normal','reverseHolofoil','firstEditionNormal'];
 
-    const labelMap = { holofoil:'Holofoil', firstEditionHolofoil:'1st Ed. Holo', reverseHolofoil:'Reverse Holo', normal:'Normal', firstEditionNormal:'1st Ed. Normal' };
-    const types = order.filter(k => tcgp[k]?.market).slice(0, 2).map(k => ({ key: k, label: labelMap[k] }));
+    const labels = { holofoil:'Holofoil', firstEditionHolofoil:'1st Ed. Holo', reverseHolofoil:'Reverse Holo', normal:'Normal', firstEditionNormal:'1st Ed. Normal' };
+    const types  = order.filter(k => tcgp[k]?.market).slice(0, 2).map(k => ({ key: k, label: labels[k] }));
 
     let html = `
       <div class="section-header sh-us">
@@ -861,36 +713,36 @@
 
     html += `<div class="price-box" style="background:#f0f4ff;border-color:rgba(0,80,200,0.15);">`;
     types.forEach((t, i) => {
-      const p   = tcgp[t.key];
-      const all = [p.low, p.mid, p.market, p.high].filter(v => v != null && v > 0);
-      const med = all.sort((a,b)=>a-b)[Math.floor(all.length/2)] || Infinity;
-      const cap = med * 4;
+      const p    = tcgp[t.key];
+      const vals = [p.low, p.mid, p.market, p.high].filter(v => v != null && v > 0);
+      const med  = vals.sort((a,b)=>a-b)[Math.floor(vals.length/2)] || Infinity;
+      const cap  = med * 4;
       const safe = v => (v != null && v > 0 && v <= cap) ? v : null;
-      const low = safe(p.low), mid = safe(p.mid), market = safe(p.market), high = safe(p.high);
+      const low  = safe(p.low), mid = safe(p.mid), market = safe(p.market), high = safe(p.high);
       const primary = market ?? mid ?? low;
       if (!primary) return;
       html += `
         <div style="${i>0?'margin-top:12px;padding-top:12px;border-top:0.5px solid rgba(0,0,0,0.07)':''}">
           <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px;">${t.label}</div>
           <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;">
-            <span style="font-size:26px;font-weight:700;color:#1a1a1a;">A$${(primary*USD_TO_AUD).toFixed(2)}</span>
+            <span style="font-size:26px;font-weight:700;color:#1a1a1a;">A$${(primary*USD_AUD).toFixed(2)}</span>
             <span style="font-size:12px;color:#94a3b8;">(US$${primary.toFixed(2)})</span>
           </div>
           <div class="price-stats">
-            ${low    ? `<div class="stat-chip"><strong>A$${(low*USD_TO_AUD).toFixed(2)}</strong>Low</div>` : ''}
-            ${mid    ? `<div class="stat-chip"><strong>A$${(mid*USD_TO_AUD).toFixed(2)}</strong>Mid</div>` : ''}
-            ${market ? `<div class="stat-chip"><strong>A$${(market*USD_TO_AUD).toFixed(2)}</strong>Market</div>` : ''}
-            ${high   ? `<div class="stat-chip"><strong>A$${(high*USD_TO_AUD).toFixed(2)}</strong>High</div>` : ''}
+            ${low    ? `<div class="stat-chip"><strong>A$${(low*USD_AUD).toFixed(2)}</strong>Low</div>` : ''}
+            ${mid    ? `<div class="stat-chip"><strong>A$${(mid*USD_AUD).toFixed(2)}</strong>Mid</div>` : ''}
+            ${market ? `<div class="stat-chip"><strong>A$${(market*USD_AUD).toFixed(2)}</strong>Market</div>` : ''}
+            ${high   ? `<div class="stat-chip"><strong>A$${(high*USD_AUD).toFixed(2)}</strong>High</div>` : ''}
           </div>
         </div>`;
     });
     html += `</div>`;
     if (tcgp.url) html += `<a href="${tcgp.url}" target="_blank" class="btn btn-blue" style="margin-bottom:8px;"><i class="ti ti-external-link"></i> View on TCGPlayer.com</a>`;
-    if (tcgp.updatedAt) html += `<div style="font-size:11px;color:var(--text-hint);margin-bottom:4px;">TCGPlayer data updated ${tcgp.updatedAt}</div>`;
+    if (tcgp.updatedAt) html += `<div style="font-size:11px;color:var(--text-hint);margin-bottom:4px;">Updated ${tcgp.updatedAt}</div>`;
     return html;
   }
 
-  // ── Tab switching ─────────────────────────────────────────────────────────
+  // ── Tab switching ───────────────────────────────────────────────────────────
   function switchCond(cond) {
     activeCond = cond;
     const active = document.getElementById('pricingSection')._activeData || {};
@@ -906,7 +758,7 @@
     document.getElementById('gradeToggleIcon')?.classList.toggle('open');
   }
 
-  // ── Smart EN set detection ────────────────────────────────────────────────
+  // ── Smart EN set detection ──────────────────────────────────────────────────
   let ALL_SETS = [];
   const STOP_WORDS = new Set(['card','cards','pokemon','pokémon','holo','rare','ex','gx','vmax','vstar','shiny','full','art','alt','secret','trainer','energy','item','supporter','stadium','the','and','of','in','a','an','for','with','set','series']);
 
@@ -923,7 +775,7 @@
     }
     if (bestScore < 4 || !best) return { namePart: raw.trim(), detectedSet: null, matchedSetName: null };
     let namePart = raw.trim();
-    for (const w of bestWords) namePart = namePart.replace(new RegExp(`\\b${w}\\b`, 'gi'), '');
+    for (const w of bestWords) namePart = namePart.replace(new RegExp('\\b' + w + '\\b', 'gi'), '');
     namePart = namePart.trim().replace(/\s+/g, ' ') || raw.trim();
     return { namePart, detectedSet: best, matchedSetName: best.name };
   }
@@ -933,7 +785,7 @@
       const res  = await fetch(`${TCG_EN}/sets?orderBy=-releaseDate&pageSize=500`);
       const data = await res.json();
       ALL_SETS = data.data || [];
-    } catch(e) {}
+    } catch(e) { console.warn('Sets failed to load:', e); }
   }
 
   loadEnSets();
