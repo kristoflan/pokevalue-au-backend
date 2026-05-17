@@ -112,6 +112,10 @@
     .card-set { font-size: 11px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .card-num { font-size: 11px; color: var(--text-hint); margin-top: 1px; }
     .card-rarity { display: inline-block; font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 4px; margin-top: 5px; background: var(--info-bg); color: var(--info-text); }
+    .card-stamp-badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; margin-top: 4px; background: #fef9c3; color: #854d0e; border: 0.5px solid #fde68a; }
+    .card-stamp-badge.nostamp { background: #f1f5f9; color: #475569; border-color: #cbd5e1; font-weight: 600; }
+    .stamp-overlay { position: absolute; top: 6px; right: 6px; background: rgba(133,77,14,0.9); color: #fef9c3; font-size: 14px; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .card-img-wrap { position: relative; aspect-ratio: 3/4; background: var(--surface2); display: flex; align-items: center; justify-content: center; overflow: hidden; }
 
     /* ── Skeletons ── */
     .loading-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
@@ -327,22 +331,89 @@
   }
 
   // ── English search (pokemontcg.io) ───────────────────────────────────────
+  // Also extracts number hints from query (e.g. "Charmander 44") and tries
+  // multiple number formats to catch promo cards stored as SVP044 etc.
   async function searchEnglish(q) {
-    // Smart set detection from query
     const { namePart, detectedSet, matchedSetName } = parseSearchQuery(q);
-    let query = `name:"${namePart}*"`;
-    if (detectedSet) query += ` set.id:${detectedSet.id}`;
+
+    // Extract a trailing number from the query if present (e.g. "Charmander 44" → "44")
+    const numberMatch = namePart.match(/(\d{1,4})/);
+    const numberHint  = numberMatch ? numberMatch[1] : null;
+    // Build the clean name without the number
+    const cleanName   = numberHint ? namePart.replace(numberHint, '').trim() : namePart;
+
+    // Build queries — try name only first, then name+number variants
+    const queries = [];
+    let baseQuery = `name:"${cleanName || namePart}*"`;
+    if (detectedSet) baseQuery += ` set.id:${detectedSet.id}`;
+    queries.push(baseQuery);
+
+    // If a number was detected, also try number-specific searches
+    if (numberHint) {
+      const padded = numberHint.padStart(3, '0'); // "44" -> "044"
+      // Try number field directly
+      queries.push(`name:"${cleanName || namePart}*" number:"${numberHint}"`);
+      queries.push(`name:"${cleanName || namePart}*" number:"${padded}"`);
+    }
 
     try {
-      const res  = await fetch(`${TCG_EN}/cards?q=${encodeURIComponent(query)}&pageSize=24&orderBy=-set.releaseDate`);
-      if (!res.ok) throw new Error();
-      const data = await res.json();
+      // Run queries in parallel, merge and deduplicate results
+      const allResults = await Promise.all(
+        queries.map(query =>
+          fetch(`${TCG_EN}/cards?q=${encodeURIComponent(query)}&pageSize=24&orderBy=-set.releaseDate`)
+            .then(r => r.json())
+            .then(d => d.data || [])
+            .catch(() => [])
+        )
+      );
+
+      // Deduplicate by card id
+      const seen = new Set();
+      let cards = allResults.flat().filter(card => {
+        if (seen.has(card.id)) return false;
+        seen.add(card.id);
+        return true;
+      });
+
+      // Sort by release date descending
+      cards.sort((a, b) => new Date(b.set?.releaseDate || 0) - new Date(a.set?.releaseDate || 0));
+      cards = cards.slice(0, 24);
+
+      // Synthesise stamp variants for promo cards
+      cards = synthesiseStampVariants(cards);
+
       const hint = matchedSetName ? ` · set: <span style="color:var(--red);font-weight:600">${matchedSetName}</span>` : '';
-      renderResults(data.data || [], hint, 'en');
+      renderResults(cards, hint, 'en');
     } catch(err) {
-      console.error('JP search error:', err);
-      resultsArea.innerHTML = `<div class="status-msg"><i class="ti ti-wifi-off"></i><strong>Connection error</strong>Check your internet and try again. (${err.message})</div>`;
+      console.error('EN search error:', err);
+      resultsArea.innerHTML = `<div class="status-msg"><i class="ti ti-wifi-off"></i><strong>Connection error</strong>Check your internet and try again.</div>`;
     }
+  }
+
+  // ── Stamp variant synthesiser ─────────────────────────────────────────────
+  // For promo cards that have known stamp variants (Pokemon Center stamp etc.),
+  // we duplicate the card entry and tag one as stamped and one as unstamped.
+  // The eBay pricing query is adjusted accordingly for each variant.
+  const STAMP_PROMO_SETS = ['svp', 'swshp', 'smp', 'xyp', 'bwp', 'np', 'dp'];
+  const STAMP_PROMO_SETS_RENDER = STAMP_PROMO_SETS; // alias for use in renderResults
+
+  function isStampablePromo(card) {
+    const setId   = (card.set?.id || '').toLowerCase();
+    const setName = (card.set?.name || '').toLowerCase();
+    return STAMP_PROMO_SETS.some(s => setId.startsWith(s)) ||
+           setName.includes('black star') ||
+           setName.includes('promo');
+  }
+
+  function synthesiseStampVariants(cards) {
+    const result = [];
+    cards.forEach(card => {
+      result.push({ ...card, _stampVariant: 'none' });
+      if (isStampablePromo(card)) {
+        result.push({ ...card, _stampVariant: 'pokemon_center', id: card.id + '_stamped' });
+      }
+    });
+    return result;
   }
 
   // ── Japanese search (via backend proxy — avoids CORS) ────────────────────
@@ -386,15 +457,24 @@
         ? (card.images?.small || '')
         : (card.image ? `${card.image}/low.webp` : '');
 
+      // Stamp badge for promo variants
+      const stampBadge = card._stampVariant === 'pokemon_center'
+        ? `<div class="card-stamp-badge">⭐ PC Stamp</div>`
+        : card._stampVariant === 'none' && lang === 'en' && card.set?.id && STAMP_PROMO_SETS_RENDER.some(s => card.set.id.toLowerCase().startsWith(s))
+        ? `<div class="card-stamp-badge nostamp">No Stamp</div>`
+        : '';
+
       el.innerHTML = `
         <div class="card-img-wrap">
           ${imgSrc ? `<img src="${imgSrc}" alt="${name}" loading="lazy" />` : `<div class="no-img"><i class="ti ti-photo-off"></i>No image</div>`}
+          ${card._stampVariant === 'pokemon_center' ? '<div class="stamp-overlay">⭐</div>' : ''}
         </div>
         <div class="card-info">
           <div class="card-name">${name}</div>
           <div class="card-set">${setName}</div>
           <div class="card-num">#${num} · ${lang === 'en' ? (card.supertype || '') : 'Japanese'}</div>
           ${rarity ? `<div class="card-rarity">${rarity}</div>` : ''}
+          ${stampBadge}
         </div>`;
       el.addEventListener('click', () => lang === 'en' ? selectCardEN(card, el) : selectCardJP(card, el));
       grid.appendChild(el);
@@ -413,6 +493,23 @@
     document.getElementById('detailSet').textContent  = card.set?.name || '';
     document.getElementById('detailNum').textContent  = `#${card.number || '?'} · ${card.set?.series || ''}`;
     document.getElementById('detailRarity').textContent = card.rarity || '';
+
+    // Show stamp variant label in detail panel
+    const existingStampLabel = document.getElementById('detailStampLabel');
+    if (existingStampLabel) existingStampLabel.remove();
+    if (card._stampVariant === 'pokemon_center') {
+      const stampLabel = document.createElement('div');
+      stampLabel.id = 'detailStampLabel';
+      stampLabel.style.cssText = 'display:inline-block;background:#854d0e;color:#fef9c3;font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;margin-top:6px;';
+      stampLabel.textContent = '⭐ Pokemon Center Stamp';
+      document.getElementById('detailRarity').after(stampLabel);
+    } else if (card._stampVariant === 'none' && isStampablePromoCard(card)) {
+      const stampLabel = document.createElement('div');
+      stampLabel.id = 'detailStampLabel';
+      stampLabel.style.cssText = 'display:inline-block;background:#f1f5f9;color:#475569;font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;margin-top:6px;border:0.5px solid #cbd5e1;';
+      stampLabel.textContent = 'No Stamp (Regular)';
+      document.getElementById('detailRarity').after(stampLabel);
+    }
     document.getElementById('detailPanel').classList.remove('jp-mode');
 
     const badge = document.getElementById('detailLangBadge');
@@ -420,7 +517,15 @@
     badge.innerHTML = '<i class="ti ti-language"></i> English';
 
     const numPart  = buildEbayNum(card.number, card.set?.printedTotal || card.set?.total, false);
-    const q        = encodeURIComponent(`${card.name} ${numPart}`.trim());
+    const stampVariant = card._stampVariant || 'none';
+    // Adjust eBay search based on stamp variant
+    let ebayBase = `${card.name} ${numPart}`.trim();
+    if (stampVariant === 'pokemon_center') {
+      ebayBase += ' pokemon center stamp';
+    } else if (stampVariant === 'none' && isStampablePromoCard(card)) {
+      ebayBase += ' -stamp -"pokemon center"';
+    }
+    const q = encodeURIComponent(ebayBase);
     document.getElementById('ebayActiveBtn').href = `https://www.ebay.com.au/sch/i.html?_nkw=${q}&_sop=10&LH_PrefLoc=1`;
     document.getElementById('ebaySoldBtn').href   = `https://www.ebay.com.au/sch/i.html?_nkw=${q}&LH_Sold=1&LH_Complete=1&LH_ItemCondition=3&_sop=13&LH_PrefLoc=1`;
     document.getElementById('ebayActiveBtn').className = 'btn btn-red';
@@ -439,7 +544,8 @@
 
     const isPromo = isPromoCard(card.set?.name || '', card.number || '');
     try {
-      const res  = await fetch(`${BACKEND}/price?name=${encodeURIComponent(card.name)}&number=${encodeURIComponent(card.number || '')}&total=${encodeURIComponent(card.set?.printedTotal || card.set?.total || '')}&isPromo=${isPromo}`);
+      const const stampVariant = card._stampVariant || 'none';
+      res  = await fetch(`${BACKEND}/price?name=${encodeURIComponent(card.name)}&number=${encodeURIComponent(card.number || '')}&total=${encodeURIComponent(card.set?.printedTotal || card.set?.total || '')}&isPromo=${isPromo}&stamp=${encodeURIComponent(stampVariant)}`);
       const data = await res.json();
       renderPricingEN(data, tcgp, card.rarity || '', card.set?.name || '');
     } catch {
@@ -458,6 +564,23 @@
     document.getElementById('detailSet').textContent   = card.set?.name || card.set || '';
     document.getElementById('detailNum').textContent   = `#${card.localId || card.number || '?'} · Japanese`;
     document.getElementById('detailRarity').textContent = card.rarity || '';
+
+    // Show stamp variant label in detail panel
+    const existingStampLabel = document.getElementById('detailStampLabel');
+    if (existingStampLabel) existingStampLabel.remove();
+    if (card._stampVariant === 'pokemon_center') {
+      const stampLabel = document.createElement('div');
+      stampLabel.id = 'detailStampLabel';
+      stampLabel.style.cssText = 'display:inline-block;background:#854d0e;color:#fef9c3;font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;margin-top:6px;';
+      stampLabel.textContent = '⭐ Pokemon Center Stamp';
+      document.getElementById('detailRarity').after(stampLabel);
+    } else if (card._stampVariant === 'none' && isStampablePromoCard(card)) {
+      const stampLabel = document.createElement('div');
+      stampLabel.id = 'detailStampLabel';
+      stampLabel.style.cssText = 'display:inline-block;background:#f1f5f9;color:#475569;font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;margin-top:6px;border:0.5px solid #cbd5e1;';
+      stampLabel.textContent = 'No Stamp (Regular)';
+      document.getElementById('detailRarity').after(stampLabel);
+    }
     document.getElementById('detailPanel').classList.add('jp-mode');
 
     const badge = document.getElementById('detailLangBadge');
@@ -495,6 +618,11 @@
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
+  function isStampablePromoCard(card) {
+    const setId = (card.set?.id || '').toLowerCase();
+    return STAMP_PROMO_SETS.some(s => setId.startsWith(s));
+  }
+
   function isPromoCard(setName, cardNumber) {
     return setName.toLowerCase().includes('promo') ||
            setName.toLowerCase().includes('black star') ||
