@@ -344,44 +344,55 @@ app.get('/jp-search', async (req, res) => {
   let summaries = null;
   let lastError = null;
 
-  // Try JA endpoint with retries
+  // Step 1: Try JA endpoint with retries
   try {
     const url = `https://api.tcgdex.net/v2/ja/cards?name=${encodeURIComponent(name)}`;
-    console.log('Trying TCGdex JP search:', url);
+    console.log('[JP-SEARCH] Step 1 — Trying JA search:', url);
     const r = await fetchWithRetry(url, 3, 700);
+    console.log('[JP-SEARCH] Step 1 — Response status:', r.status, '| isArray:', Array.isArray(r.data), '| length:', Array.isArray(r.data) ? r.data.length : 'n/a');
     if (Array.isArray(r.data)) {
       summaries = r.data;
-      console.log(`JA search success — ${summaries.length} results`);
     }
   } catch(e) {
     lastError = e;
-    console.warn('JA search failed after retries:', e.message, '| status:', e.response?.status);
+    console.warn('[JP-SEARCH] Step 1 — FAILED:', e.message, '| status:', e.response?.status);
   }
 
-  // Fallback: search EN endpoint to get card IDs/names, then fetch JA versions by ID
+  // Step 2: Fallback — search EN endpoint, map IDs to JA
   if (!summaries || !summaries.length) {
+    console.log('[JP-SEARCH] Step 2 — JA empty/failed, trying EN fallback');
     try {
       const enUrl = `https://api.tcgdex.net/v2/en/cards?name=${encodeURIComponent(name)}`;
-      console.log('Falling back to EN search for JP mapping:', enUrl);
+      console.log('[JP-SEARCH] Step 2 — EN search URL:', enUrl);
       const enRes = await fetchWithRetry(enUrl, 2, 500);
-      const enCards = Array.isArray(enRes.data) ? enRes.data.slice(0, 12) : [];
-      console.log(`EN fallback found ${enCards.length} cards — fetching JA equivalents by ID`);
+      console.log('[JP-SEARCH] Step 2 — EN response status:', enRes.status, '| isArray:', Array.isArray(enRes.data), '| length:', Array.isArray(enRes.data) ? enRes.data.length : 'n/a');
 
-      // Try fetching the JA version of each EN card by the same ID
+      const enCards = Array.isArray(enRes.data) ? enRes.data.slice(0, 12) : [];
+      console.log('[JP-SEARCH] Step 2 — EN cards found:', enCards.length, '| sample IDs:', enCards.slice(0,3).map(c=>c.id));
+
       const jaResults = await Promise.all(
         enCards.map(async c => {
           try {
             const r = await axios.get(`https://api.tcgdex.net/v2/ja/cards/${c.id}`, {
               timeout: 8000, headers: { Accept: 'application/json' },
+              validateStatus: s => true, // capture all statuses
             });
+            if (r.status !== 200) {
+              console.log(`[JP-SEARCH] Step 2 — JA lookup for ${c.id} returned status ${r.status}`);
+              return null;
+            }
             return r.data;
-          } catch(e) { return null; }
+          } catch(e) {
+            console.log(`[JP-SEARCH] Step 2 — JA lookup for ${c.id} threw:`, e.message);
+            return null;
+          }
         })
       );
       summaries = jaResults.filter(Boolean);
-      console.log(`Found ${summaries.length} JA cards via EN ID mapping`);
+      console.log('[JP-SEARCH] Step 2 — JA cards found via ID mapping:', summaries.length);
     } catch(e) {
-      console.warn('EN fallback also failed:', e.message);
+      lastError = e;
+      console.warn('[JP-SEARCH] Step 2 — EN fallback FAILED:', e.message, '| status:', e.response?.status);
     }
   }
 
