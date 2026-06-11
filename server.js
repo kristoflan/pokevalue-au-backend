@@ -399,21 +399,43 @@ app.get('/jp-search', async (req, res) => {
   // Otherwise fetch full details for search-result summaries.
   const details = await Promise.all(
     summaries.slice(0, 24).map(async card => {
-      // If already has variants/set (full detail object), return as-is
-      if (card.variants || card.set) return card;
-      try {
-        const r = await axios.get(`https://api.tcgdex.net/v2/ja/cards/${card.id}`, {
-          timeout: 10000, headers: { Accept: 'application/json' },
-        });
-        return r.data;
-      } catch(e) {
-        return { id: card.id, localId: card.localId, name: card.name, image: card.image || null };
+      let jaCard = card;
+      // If not already a full detail object, fetch it
+      if (!card.variants && !card.set) {
+        try {
+          const r = await axios.get(`https://api.tcgdex.net/v2/ja/cards/${card.id}`, {
+            timeout: 10000, headers: { Accept: 'application/json' },
+          });
+          jaCard = r.data;
+        } catch(e) {
+          jaCard = { id: card.id, localId: card.localId, name: card.name, image: card.image || null };
+        }
       }
+
+      // Fetch the ENGLISH name for the same card ID — this is what eBay AU
+      // sellers actually use in listings, even for Japanese cards.
+      // e.g. JA name "リザードン" -> EN name "Charizard"
+      let englishName = null;
+      try {
+        const enR = await axios.get(`https://api.tcgdex.net/v2/en/cards/${jaCard.id}`, {
+          timeout: 8000, headers: { Accept: 'application/json' },
+        });
+        englishName = enR.data?.name || null;
+      } catch(e) {
+        // Some JA-exclusive cards have no EN equivalent — leave null
+      }
+
+      return {
+        ...jaCard,
+        nameJa: jaCard.name,           // original Japanese name for display
+        name: englishName || jaCard.name, // use English name for display + eBay search
+        hasEnglishName: !!englishName,
+      };
     })
   );
 
   const full = details.filter(Boolean);
-  console.log(`Returning ${full.length} JP card objects`);
+  console.log(`Returning ${full.length} JP card objects (${full.filter(c=>c.hasEnglishName).length} with EN names)`);
   return res.json(full);
 });
 

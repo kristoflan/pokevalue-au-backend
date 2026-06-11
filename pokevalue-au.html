@@ -470,6 +470,8 @@
     const num     = lang === 'en' ? (card.number || '?') : (card.localId || '?');
     const rarity  = card.rarity || '';
     const imgSrc  = lang === 'en' ? (card.images?.small || '') : (card.image ? `${card.image}/low.webp` : '');
+    // For JP cards, show the original Japanese name as a subtitle if different from displayed name
+    const jaSubtitle = (lang === 'jp' && card.nameJa && card.nameJa !== name) ? card.nameJa : '';
     const isPC    = card._stampVariant === 'pokemon_center';
     const isPlain = card._stampVariant === 'none' && isStampablePromo(card);
     const stampBadge = isPC
@@ -485,6 +487,7 @@
       </div>
       <div class="card-info">
         <div class="card-name">${name}</div>
+        ${jaSubtitle ? `<div class="card-set" style="font-style:italic;">${jaSubtitle}</div>` : ''}
         <div class="card-set">${setName}</div>
         <div class="card-num">#${num} · ${lang === 'en' ? (card.supertype || '') : 'Japanese'}</div>
         ${rarity ? `<div class="card-rarity">${rarity}</div>` : ''}
@@ -557,7 +560,9 @@
 
     document.getElementById('detailImg').src           = card.image ? `${card.image}/high.webp` : '';
     document.getElementById('detailName').textContent   = card.name || '—';
-    document.getElementById('detailSet').textContent    = card.set?.name || card.set || '';
+    document.getElementById('detailSet').textContent    = (card.nameJa && card.nameJa !== card.name)
+      ? `${card.nameJa} · ${card.set?.name || card.set || ''}`
+      : (card.set?.name || card.set || '');
     document.getElementById('detailNum').textContent    = `#${card.localId || '?'} · Japanese`;
     document.getElementById('detailRarity').textContent = card.rarity || '';
     document.getElementById('detailPanel').classList.add('jp-mode');
