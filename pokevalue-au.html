@@ -25,25 +25,14 @@
     .app-shell { width: 100%; max-width: 430px; background: var(--bg); min-height: 100vh; }
 
     /* ── Header ── */
-    .app-header { padding: 14px 16px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 10px rgba(0,0,0,0.25); transition: background 0.3s; }
-    .app-header.en { background: var(--red); }
-    .app-header.jp { background: var(--jp); }
+    .app-header { background: var(--red); padding: 14px 16px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 10px rgba(0,0,0,0.25); }
     .pokeball { width: 34px; height: 34px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 0 3px rgba(255,255,255,0.25); }
-    .pokeball-inner { width: 13px; height: 13px; border-radius: 50%; border: 2.5px solid #222; transition: background 0.3s; }
-    .app-header.en .pokeball-inner { background: var(--red); }
-    .app-header.jp .pokeball-inner { background: var(--jp); }
-    .header-text { flex: 1; }
+    .pokeball-inner { width: 13px; height: 13px; background: var(--red); border-radius: 50%; border: 2.5px solid #222; }
     .header-text h1 { font-size: 18px; font-weight: 700; color: white; }
     .header-text span { font-size: 11px; color: rgba(255,255,255,0.68); margin-top: 1px; display: block; }
-    .lang-toggle { display: flex; background: rgba(255,255,255,0.2); border-radius: 20px; padding: 3px; gap: 2px; flex-shrink: 0; }
-    .lang-btn { padding: 4px 10px; border-radius: 16px; font-size: 12px; font-weight: 700; border: none; cursor: pointer; transition: all 0.2s; color: rgba(255,255,255,0.7); background: transparent; }
-    .lang-btn.active { background: white; color: var(--red); }
-    .app-header.jp .lang-btn.active { color: var(--jp); }
 
     /* ── Search area ── */
     .search-area { background: var(--surface); padding: 12px 14px; border-bottom: 0.5px solid var(--border); }
-
-    /* Quick search row */
     .quick-search { display: flex; gap: 8px; margin-bottom: 8px; }
     .quick-search input {
       flex: 1; height: 44px; padding: 0 14px; font-size: 15px;
@@ -53,60 +42,31 @@
     }
     .quick-search input:focus { border-color: var(--red); box-shadow: 0 0 0 3px rgba(204,0,0,0.1); background: white; }
     .search-btn {
-      height: 44px; padding: 0 16px; color: white; border: none;
+      height: 44px; padding: 0 16px; background: var(--red); color: white; border: none;
       border-radius: var(--radius-md); font-size: 14px; font-weight: 600;
-      cursor: pointer; display: flex; align-items: center; gap: 6px;
-      white-space: nowrap; transition: opacity 0.15s, background 0.3s;
+      cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap;
+      transition: opacity 0.15s;
     }
-    .search-btn.en { background: var(--red); }
-    .search-btn.jp { background: var(--jp); }
     .search-btn:active { opacity: 0.82; transform: scale(0.98); }
+    .search-hint { font-size: 11px; color: var(--text-hint); margin-bottom: 8px; }
 
     /* Advanced toggle */
-    .adv-toggle {
-      display: flex; align-items: center; gap: 6px;
-      font-size: 12px; font-weight: 600; color: var(--text-hint);
-      cursor: pointer; user-select: none; padding: 2px 0;
-      width: fit-content;
-    }
+    .adv-toggle { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--text-hint); cursor: pointer; user-select: none; padding: 2px 0; width: fit-content; }
     .adv-toggle i { font-size: 14px; transition: transform 0.2s; }
     .adv-toggle.open i.chevron { transform: rotate(180deg); }
     .adv-toggle:hover { color: var(--text-muted); }
-
-    /* Advanced panel */
     .adv-panel { display: none; margin-top: 10px; padding-top: 10px; border-top: 0.5px solid var(--border); }
     .adv-panel.open { display: block; }
     .adv-label { font-size: 11px; font-weight: 600; color: var(--text-hint); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; margin-top: 10px; }
     .adv-label:first-child { margin-top: 0; }
     .adv-row { display: flex; gap: 8px; }
-    .adv-input {
-      flex: 1; height: 36px; padding: 0 12px; font-size: 13px;
-      border: 0.5px solid var(--border); border-radius: var(--radius-md);
-      background: var(--surface2); color: var(--text); outline: none;
-    }
+    .adv-input { flex: 1; height: 36px; padding: 0 12px; font-size: 13px; border: 0.5px solid var(--border); border-radius: var(--radius-md); background: var(--surface2); color: var(--text); outline: none; }
     .adv-input:focus { border-color: var(--red); }
-    .adv-select {
-      flex: 1; height: 36px; padding: 0 10px; font-size: 13px;
-      border: 0.5px solid var(--border); border-radius: var(--radius-md);
-      background: var(--surface2); color: var(--text-muted); outline: none;
-    }
-    .adv-clear {
-      height: 36px; padding: 0 12px; font-size: 12px; font-weight: 600;
-      border: 0.5px solid var(--border); border-radius: var(--radius-md);
-      background: var(--surface2); color: var(--text-muted); cursor: pointer;
-    }
+    .adv-select { flex: 1; height: 36px; padding: 0 10px; font-size: 13px; border: 0.5px solid var(--border); border-radius: var(--radius-md); background: var(--surface2); color: var(--text-muted); outline: none; }
+    .adv-clear { height: 36px; padding: 0 12px; font-size: 12px; font-weight: 600; border: 0.5px solid var(--border); border-radius: var(--radius-md); background: var(--surface2); color: var(--text-muted); cursor: pointer; }
     .adv-hint { font-size: 11px; color: var(--text-hint); margin-top: 8px; line-height: 1.5; }
-
-    /* Active filters badge */
-    .active-filters {
-      display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px;
-    }
-    .filter-chip {
-      display: inline-flex; align-items: center; gap: 4px;
-      background: rgba(204,0,0,0.08); color: var(--red);
-      font-size: 11px; font-weight: 600; padding: 3px 8px;
-      border-radius: 10px; border: 0.5px solid rgba(204,0,0,0.2);
-    }
+    .active-filters { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+    .filter-chip { display: inline-flex; align-items: center; gap: 4px; background: rgba(204,0,0,0.08); color: var(--red); font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 10px; border: 0.5px solid rgba(204,0,0,0.2); }
     .filter-chip i { font-size: 12px; cursor: pointer; }
 
     /* ── Results ── */
@@ -115,17 +75,20 @@
     .status-msg i { font-size: 44px; display: block; margin-bottom: 14px; opacity: 0.28; color: var(--text); }
     .status-msg strong { display: block; font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
     .results-header { font-size: 12px; color: var(--text-hint); margin-bottom: 12px; padding: 0 2px; line-height: 1.5; }
+    .results-section-label { font-size: 11px; font-weight: 700; color: var(--text-hint); text-transform: uppercase; letter-spacing: 0.6px; margin: 16px 0 8px; padding: 0 2px; display: flex; align-items: center; gap: 6px; }
+    .results-section-label:first-child { margin-top: 0; }
     .card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
     .card-item { background: var(--surface); border-radius: var(--radius-lg); border: 0.5px solid var(--border); overflow: hidden; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s; }
     .card-item:active { transform: scale(0.98); }
     .card-item:hover { border-color: var(--border-med); box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
     .card-item.selected { border: 2px solid var(--red); box-shadow: 0 2px 14px rgba(204,0,0,0.18); }
-    .card-item.selected.jp-selected { border-color: var(--jp); }
+    .card-item.selected.jp-selected { border-color: var(--jp); box-shadow: 0 2px 14px rgba(212,56,13,0.18); }
     .card-img-wrap { position: relative; aspect-ratio: 3/4; background: var(--surface2); display: flex; align-items: center; justify-content: center; overflow: hidden; }
     .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
     .card-img-wrap .no-img { font-size: 11px; color: var(--text-hint); text-align: center; padding: 12px; }
     .card-img-wrap .no-img i { font-size: 28px; display: block; margin-bottom: 4px; opacity: 0.5; }
     .stamp-overlay { position: absolute; top: 6px; right: 6px; background: rgba(133,77,14,0.9); color: #fef9c3; font-size: 13px; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .lang-flag { position: absolute; top: 6px; left: 6px; font-size: 16px; background: rgba(255,255,255,0.92); width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
     .card-info { padding: 8px 10px 10px; }
     .card-name { font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .card-set { font-size: 11px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -229,55 +192,42 @@
 <body>
 <div class="app-shell">
 
-  <!-- ── Header ── -->
-  <div class="app-header en" id="appHeader">
+  <!-- Header -->
+  <div class="app-header">
     <div class="pokeball"><div class="pokeball-inner"></div></div>
     <div class="header-text">
       <h1>PokéValue AU</h1>
-      <span id="headerSub">Australian Pokémon card prices</span>
-    </div>
-    <div class="lang-toggle">
-      <button class="lang-btn active" id="btnEN" onclick="setLang('en')">EN</button>
-      <button class="lang-btn" id="btnJP" onclick="setLang('jp')">JP</button>
+      <span>Australian Pokémon card prices · EN &amp; JP</span>
     </div>
   </div>
 
-  <!-- ── Search ── -->
-  <div class="search-area" id="searchArea">
-
-    <!-- Quick search -->
+  <!-- Search -->
+  <div class="search-area">
+    <div class="search-hint">Search any card — English or Japanese, e.g. "Charizard" or "Umbreon Prismatic"</div>
     <div class="quick-search">
       <input type="text" id="searchInput" placeholder="Card name..." autocomplete="off" />
-      <button class="search-btn en" id="searchBtn" onclick="doSearch()">
+      <button class="search-btn" onclick="doSearch()">
         <i class="ti ti-search"></i> Search
       </button>
     </div>
 
-    <!-- Advanced toggle -->
     <div class="adv-toggle" id="advToggle" onclick="toggleAdvanced()">
       <i class="ti ti-adjustments-horizontal"></i>
-      <span id="advToggleLabel">Advanced search</span>
+      <span>Advanced search (English cards)</span>
       <i class="ti ti-chevron-down chevron"></i>
     </div>
 
-    <!-- Active filter chips (shown when advanced filters are set) -->
     <div class="active-filters" id="activeFilters"></div>
 
-    <!-- Advanced panel -->
     <div class="adv-panel" id="advPanel">
-
       <div class="adv-label">Card number</div>
       <div class="adv-row">
         <input class="adv-input" type="text" id="advNumber" placeholder="e.g. 44 or 4/102" maxlength="10" />
       </div>
-
       <div class="adv-label">Set</div>
       <div class="adv-row">
-        <select class="adv-select" id="advSet">
-          <option value="">Any set</option>
-        </select>
+        <select class="adv-select" id="advSet"><option value="">Any set</option></select>
       </div>
-
       <div class="adv-label">Rarity</div>
       <div class="adv-row">
         <select class="adv-select" id="advRarity">
@@ -293,24 +243,20 @@
         </select>
         <button class="adv-clear" onclick="clearAdvanced()">Clear all</button>
       </div>
-
-      <div class="adv-hint" id="advHint">
-        Fill in any combination — all fields are optional. More fields = more precise results.
-      </div>
-
+      <div class="adv-hint">These filters apply to English card results only. Japanese results are unaffected.</div>
     </div>
   </div>
 
-  <!-- ── Results ── -->
+  <!-- Results -->
   <div class="results-area" id="resultsArea">
     <div class="status-msg">
       <i class="ti ti-cards"></i>
       <strong>Find any Pokémon card</strong>
-      Type a name and hit Search. Use <strong>Advanced search</strong> to filter by number, set, or rarity.
+      Search by name — both English and Japanese cards will appear in results, marked with 🇬🇧 / 🇯🇵.
     </div>
   </div>
 
-  <!-- ── Detail panel ── -->
+  <!-- Detail panel -->
   <div class="detail-panel" id="detailPanel">
     <div class="detail-header">
       <div class="detail-img"><img id="detailImg" src="" alt="" /></div>
@@ -324,12 +270,8 @@
     </div>
     <div id="pricingSection"></div>
     <div class="btn-row">
-      <a class="btn btn-red" id="ebayActiveBtn" href="#" target="_blank">
-        <i class="ti ti-tag"></i> Active listings
-      </a>
-      <a class="btn btn-ghost" id="ebaySoldBtn" href="#" target="_blank">
-        <i class="ti ti-checklist"></i> Sold listings
-      </a>
+      <a class="btn btn-red" id="ebayActiveBtn" href="#" target="_blank"><i class="ti ti-tag"></i> Active listings</a>
+      <a class="btn btn-ghost" id="ebaySoldBtn" href="#" target="_blank"><i class="ti ti-checklist"></i> Sold listings</a>
     </div>
   </div>
 
@@ -341,7 +283,6 @@
   const TCG_EN  = 'https://api.pokemontcg.io/v2';
   const STAMP_PROMO_SETS = ['svp', 'swshp', 'smp', 'xyp', 'bwp', 'np'];
 
-  let currentLang  = 'en';
   let activeCond   = 'nm';
   let advancedOpen = false;
   let ALL_SETS     = [];
@@ -360,21 +301,18 @@
     setTimeout(() => t.classList.remove('show'), 3000);
   }
 
-  // ── Advanced panel toggle ───────────────────────────────────────────────────
+  // ── Advanced panel ───────────────────────────────────────────────────────────
   function toggleAdvanced() {
     advancedOpen = !advancedOpen;
     document.getElementById('advPanel').classList.toggle('open', advancedOpen);
     document.getElementById('advToggle').classList.toggle('open', advancedOpen);
-    document.getElementById('advToggleLabel').textContent = advancedOpen ? 'Advanced search' : 'Advanced search';
   }
-
   function clearAdvanced() {
     document.getElementById('advNumber').value = '';
     document.getElementById('advSet').value    = '';
     document.getElementById('advRarity').value = '';
     updateFilterChips();
   }
-
   function updateFilterChips() {
     const chips  = document.getElementById('activeFilters');
     const number = document.getElementById('advNumber').value.trim();
@@ -388,94 +326,52 @@
     if (rarity) html += `<span class="filter-chip">${rarity}<i class="ti ti-x" onclick="clearField('advRarity')"></i></span>`;
     chips.innerHTML = html;
   }
-
-  function clearField(id) {
-    document.getElementById(id).value = '';
-    updateFilterChips();
-  }
-
-  // Update chips whenever advanced fields change
+  function clearField(id) { document.getElementById(id).value = ''; updateFilterChips(); }
   ['advNumber','advSet','advRarity'].forEach(id => {
     document.getElementById(id).addEventListener('change', updateFilterChips);
     document.getElementById(id).addEventListener('input', updateFilterChips);
   });
 
-  // ── Language toggle ─────────────────────────────────────────────────────────
-  function setLang(lang) {
-    currentLang = lang;
-    const isJP  = lang === 'jp';
-    document.getElementById('appHeader').className  = `app-header ${lang}`;
-    document.getElementById('searchBtn').className  = `search-btn ${lang}`;
-    document.getElementById('btnEN').classList.toggle('active', !isJP);
-    document.getElementById('btnJP').classList.toggle('active', isJP);
-    document.getElementById('headerSub').textContent = isJP
-      ? 'Japanese Pokémon card prices · AU market'
-      : 'Australian Pokémon card prices';
-    searchInput.placeholder = isJP ? 'Japanese card name...' : 'Card name...';
-
-    // Hide advanced panel for JP (not applicable)
-    document.getElementById('advToggle').style.display = isJP ? 'none' : 'flex';
-    document.getElementById('advPanel').classList.remove('open');
-    advancedOpen = false;
-
-    resultsArea.innerHTML = `<div class="status-msg">
-      <i class="ti ti-cards"></i>
-      <strong>${isJP ? 'Search Japanese cards' : 'Find any Pokémon card'}</strong>
-      ${isJP
-        ? 'Search by English or Japanese name — e.g. "Charizard" or "リザードン".'
-        : 'Type a name and hit Search. Use <strong>Advanced search</strong> to filter by number, set, or rarity.'}
-    </div>`;
-    detailPanel.classList.remove('visible');
-  }
-
-  // ── Search dispatcher ───────────────────────────────────────────────────────
+  // ── Search dispatcher — runs EN and JP searches in parallel ────────────────
   async function doSearch() {
     const q = searchInput.value.trim();
     if (!q) { showToast('Enter a card name to search'); return; }
     resultsArea.innerHTML = '<div class="loading-grid">' + Array(6).fill('<div class="skeleton"></div>').join('') + '</div>';
     detailPanel.classList.remove('visible');
     updateFilterChips();
-    currentLang === 'jp' ? await searchJapanese(q) : await searchEnglish(q);
+
+    const [enResult, jpCards] = await Promise.all([
+      searchEnglish(q).catch(() => ({ cards: [], hint: '' })),
+      searchJapanese(q).catch(() => []),
+    ]);
+
+    renderCombinedResults(enResult.cards, jpCards, enResult.hint);
   }
 
   // ── English search ──────────────────────────────────────────────────────────
   async function searchEnglish(name) {
-    // Collect advanced filter values
     const advNumber = document.getElementById('advNumber').value.trim();
     const advSet    = document.getElementById('advSet').value;
     const advRarity = document.getElementById('advRarity').value;
 
-    // Parse set hint from name if no explicit set selected
     const { detectedSet, matchedSetName, namePart } = parseSearchQuery(name);
     const cleanName = namePart || name;
 
-    // Build TCG API query
     let query = `name:"${cleanName}*"`;
+    if (advSet) query += ` set.id:${advSet}`;
+    else if (detectedSet) query += ` set.id:${detectedSet.id}`;
 
-    // Set filter — explicit dropdown takes priority over name-parsed set
-    if (advSet) {
-      query += ` set.id:${advSet}`;
-    } else if (detectedSet) {
-      query += ` set.id:${detectedSet.id}`;
-    }
-
-    // Number filter
     if (advNumber) {
-      // Try exact match first, fall back to partial
       const cleanNum = advNumber.includes('/') ? advNumber.split('/')[0].trim() : advNumber;
       query += ` number:"${cleanNum}"`;
     }
-
-    // Rarity filter
     if (advRarity) query += ` rarity:"${advRarity}"`;
 
-    // If no explicit number in advanced, try to detect trailing number in name
     const queries = [query];
     if (!advNumber) {
       const numMatch = cleanName.match(/\b(\d{1,4})\b/);
       if (numMatch) {
-        const n      = numMatch[1];
-        const padded = n.padStart(3, '0');
+        const n = numMatch[1], padded = n.padStart(3, '0');
         const nameOnly = cleanName.replace(n, '').trim();
         let q2 = `name:"${nameOnly || cleanName}*"`;
         if (advSet) q2 += ` set.id:${advSet}`;
@@ -486,37 +382,40 @@
       }
     }
 
+    const allResults = await Promise.all(
+      queries.map(q =>
+        fetch(`${TCG_EN}/cards?q=${encodeURIComponent(q)}&pageSize=24&orderBy=-set.releaseDate`)
+          .then(r => r.json()).then(d => d.data || []).catch(() => [])
+      )
+    );
+
+    const seen = new Set();
+    let cards = allResults.flat().filter(card => {
+      if (seen.has(card.id)) return false;
+      seen.add(card.id); return true;
+    });
+    cards.sort((a, b) => new Date(b.set?.releaseDate || 0) - new Date(a.set?.releaseDate || 0));
+    cards = synthesiseStampVariants(cards.slice(0, 24));
+
+    const hints = [];
+    if (matchedSetName && !advSet) hints.push(`set: <span style="color:var(--red);font-weight:600">${matchedSetName}</span>`);
+    if (advNumber) hints.push(`#${advNumber}`);
+    if (advRarity) hints.push(advRarity);
+    const hint = hints.length ? ` · ${hints.join(' · ')}` : '';
+
+    return { cards, hint };
+  }
+
+  // ── Japanese search (via backend proxy) ────────────────────────────────────
+  async function searchJapanese(q) {
     try {
-      const allResults = await Promise.all(
-        queries.map(q =>
-          fetch(`${TCG_EN}/cards?q=${encodeURIComponent(q)}&pageSize=24&orderBy=-set.releaseDate`)
-            .then(r => r.json()).then(d => d.data || []).catch(() => [])
-        )
-      );
-
-      // Deduplicate and sort
-      const seen = new Set();
-      let cards = allResults.flat().filter(card => {
-        if (seen.has(card.id)) return false;
-        seen.add(card.id); return true;
-      });
-      cards.sort((a, b) => new Date(b.set?.releaseDate || 0) - new Date(a.set?.releaseDate || 0));
-      cards = cards.slice(0, 24);
-
-      // Synthesise stamp variants for promo sets
-      cards = synthesiseStampVariants(cards);
-
-      // Build results header hint
-      const hints = [];
-      if (matchedSetName && !advSet) hints.push(`set: <span style="color:var(--red);font-weight:600">${matchedSetName}</span>`);
-      if (advNumber) hints.push(`#${advNumber}`);
-      if (advRarity) hints.push(advRarity);
-      const hint = hints.length ? ` · ${hints.join(' · ')}` : '';
-
-      renderResults(cards, hint, 'en');
+      const res = await fetch(`${BACKEND}/jp-search?name=${encodeURIComponent(q)}`);
+      if (!res.ok) return [];
+      const cards = await res.json();
+      return Array.isArray(cards) ? cards.slice(0, 12) : [];
     } catch(err) {
-      console.error('Search error:', err);
-      resultsArea.innerHTML = `<div class="status-msg"><i class="ti ti-wifi-off"></i><strong>Connection error</strong>Check your internet and try again.</div>`;
+      console.warn('JP search failed:', err);
+      return [];
     }
   }
 
@@ -524,77 +423,75 @@
   function isStampablePromo(card) {
     return STAMP_PROMO_SETS.some(s => (card.set?.id || '').toLowerCase().startsWith(s));
   }
-
   function synthesiseStampVariants(cards) {
     const result = [];
     cards.forEach(card => {
       result.push({ ...card, _stampVariant: 'none' });
-      if (isStampablePromo(card)) {
-        result.push({ ...card, _stampVariant: 'pokemon_center', id: card.id + '_stamped' });
-      }
+      if (isStampablePromo(card)) result.push({ ...card, _stampVariant: 'pokemon_center', id: card.id + '_stamped' });
     });
     return result;
   }
 
-  // ── Japanese search ──────────────────────────────────────────────────────────
-  async function searchJapanese(q) {
-    try {
-      const res = await fetch(`${BACKEND}/jp-search?name=${encodeURIComponent(q)}`);
-      if (!res.ok) throw new Error(`${res.status}`);
-      const cards = await res.json();
-      if (!Array.isArray(cards) || !cards.length) {
-        resultsArea.innerHTML = `<div class="status-msg"><i class="ti ti-mood-sad"></i><strong>No Japanese cards found</strong>Try a different name.</div>`;
-        return;
-      }
-      renderResults(cards, '', 'jp');
-    } catch(err) {
-      console.error('JP search error:', err);
-      resultsArea.innerHTML = `<div class="status-msg"><i class="ti ti-wifi-off"></i><strong>Connection error</strong>Check your internet and try again.</div>`;
-    }
-  }
-
-  // ── Render results ──────────────────────────────────────────────────────────
-  function renderResults(cards, hint, lang) {
-    if (!cards.length) {
+  // ── Render combined EN + JP results ─────────────────────────────────────────
+  function renderCombinedResults(enCards, jpCards, hint) {
+    const total = enCards.length + jpCards.length;
+    if (!total) {
       resultsArea.innerHTML = `<div class="status-msg"><i class="ti ti-mood-sad"></i><strong>No cards found</strong>Try different search terms or clear some filters.</div>`;
       return;
     }
-    resultsArea.innerHTML = `<div class="results-header">${cards.length} result${cards.length !== 1 ? 's' : ''}${hint} — tap a card to see AU pricing</div>`;
-    const grid = document.createElement('div');
-    grid.className = 'card-grid';
 
-    cards.forEach(card => {
-      const el     = document.createElement('div');
-      el.className = 'card-item';
-      const name   = card.name || '—';
-      const setName = lang === 'en' ? (card.set?.name || '') : (card.set?.name || card.set || '');
-      const num    = lang === 'en' ? (card.number || '?') : (card.localId || '?');
-      const rarity = card.rarity || '';
-      const imgSrc = lang === 'en'
-        ? (card.images?.small || '')
-        : (card.image ? `${card.image}/low.webp` : '');
-      const isPC    = card._stampVariant === 'pokemon_center';
-      const isPlain = card._stampVariant === 'none' && isStampablePromo(card);
-      const stampBadge = isPC
-        ? `<div class="card-stamp-badge">⭐ PC Stamp</div>`
-        : isPlain ? `<div class="card-stamp-badge nostamp">No Stamp</div>` : '';
+    let html = `<div class="results-header">${total} result${total !== 1 ? 's' : ''}${hint} — tap a card to see AU pricing</div>`;
 
-      el.innerHTML = `
-        <div class="card-img-wrap">
-          ${imgSrc ? `<img src="${imgSrc}" alt="${name}" loading="lazy" />` : `<div class="no-img"><i class="ti ti-photo-off"></i>No image</div>`}
-          ${isPC ? '<div class="stamp-overlay">⭐</div>' : ''}
-        </div>
-        <div class="card-info">
-          <div class="card-name">${name}</div>
-          <div class="card-set">${setName}</div>
-          <div class="card-num">#${num} · ${lang === 'en' ? (card.supertype || '') : 'Japanese'}</div>
-          ${rarity ? `<div class="card-rarity">${rarity}</div>` : ''}
-          ${stampBadge}
-        </div>`;
-      el.addEventListener('click', () => lang === 'en' ? selectCardEN(card, el) : selectCardJP(card, el));
-      grid.appendChild(el);
-    });
-    resultsArea.appendChild(grid);
+    if (enCards.length) {
+      html += `<div class="results-section-label"><i class="ti ti-flag" style="color:var(--red)"></i> English (${enCards.length})</div><div class="card-grid" id="enGrid"></div>`;
+    }
+    if (jpCards.length) {
+      html += `<div class="results-section-label"><i class="ti ti-flag" style="color:var(--jp)"></i> Japanese (${jpCards.length})</div><div class="card-grid" id="jpGrid"></div>`;
+    }
+
+    resultsArea.innerHTML = html;
+
+    if (enCards.length) {
+      const grid = document.getElementById('enGrid');
+      enCards.forEach(card => grid.appendChild(buildCardElement(card, 'en')));
+    }
+    if (jpCards.length) {
+      const grid = document.getElementById('jpGrid');
+      jpCards.forEach(card => grid.appendChild(buildCardElement(card, 'jp')));
+    }
+  }
+
+  // ── Build a single card grid item ───────────────────────────────────────────
+  function buildCardElement(card, lang) {
+    const el      = document.createElement('div');
+    el.className  = 'card-item';
+    const name    = card.name || '—';
+    const setName = lang === 'en' ? (card.set?.name || '') : (card.set?.name || card.set || '');
+    const num     = lang === 'en' ? (card.number || '?') : (card.localId || '?');
+    const rarity  = card.rarity || '';
+    const imgSrc  = lang === 'en' ? (card.images?.small || '') : (card.image ? `${card.image}/low.webp` : '');
+    const isPC    = card._stampVariant === 'pokemon_center';
+    const isPlain = card._stampVariant === 'none' && isStampablePromo(card);
+    const stampBadge = isPC
+      ? `<div class="card-stamp-badge">⭐ PC Stamp</div>`
+      : isPlain ? `<div class="card-stamp-badge nostamp">No Stamp</div>` : '';
+    const flag = lang === 'jp' ? '🇯🇵' : '';
+
+    el.innerHTML = `
+      <div class="card-img-wrap">
+        ${imgSrc ? `<img src="${imgSrc}" alt="${name}" loading="lazy" />` : `<div class="no-img"><i class="ti ti-photo-off"></i>No image</div>`}
+        ${flag ? `<div class="lang-flag">${flag}</div>` : ''}
+        ${isPC ? '<div class="stamp-overlay">⭐</div>' : ''}
+      </div>
+      <div class="card-info">
+        <div class="card-name">${name}</div>
+        <div class="card-set">${setName}</div>
+        <div class="card-num">#${num} · ${lang === 'en' ? (card.supertype || '') : 'Japanese'}</div>
+        ${rarity ? `<div class="card-rarity">${rarity}</div>` : ''}
+        ${stampBadge}
+      </div>`;
+    el.addEventListener('click', () => lang === 'en' ? selectCardEN(card, el) : selectCardJP(card, el));
+    return el;
   }
 
   // ── Select English card ─────────────────────────────────────────────────────
@@ -613,7 +510,6 @@
     badge.className = 'lang-badge en';
     badge.innerHTML = '<i class="ti ti-language"></i> English';
 
-    // Stamp label
     document.getElementById('detailStampLabel')?.remove();
     const sv = card._stampVariant || 'none';
     if (sv === 'pokemon_center' || (sv === 'none' && isStampablePromo(card))) {
@@ -624,7 +520,6 @@
       badge.after(sl);
     }
 
-    // eBay URLs
     const numPart = buildEbayNum(card.number, card.set?.printedTotal || card.set?.total);
     const isPromo = isPromoCard(card.set?.name || '', card.number || '');
     let ebayBase  = `${card.name} ${numPart}`.trim();
@@ -700,7 +595,6 @@
   function isPromoCard(setName, cardNumber) {
     return setName.toLowerCase().includes('promo') || setName.toLowerCase().includes('black star') || /[a-zA-Z]/.test(cardNumber);
   }
-
   function buildEbayNum(number, total) {
     if (!number) return '';
     const num = parseInt(number, 10), tot = parseInt(total, 10);
@@ -915,9 +809,10 @@
   function switchCond(cond) {
     activeCond = cond;
     const active = document.getElementById('pricingSection')._activeData || {};
+    const isJP   = document.getElementById('detailPanel').classList.contains('jp-mode');
     document.querySelectorAll('.cond-tab').forEach(t => {
       const isActive = t.textContent.toLowerCase().includes(cond);
-      t.className = 'cond-tab' + (isActive ? (currentLang === 'jp' ? ' active jp' : ' active') : '');
+      t.className = 'cond-tab' + (isActive ? (isJP ? ' active jp' : ' active') : '');
     });
     document.getElementById('condContent').innerHTML = priceBlock(cond === 'mint' ? active.mint : active.nm);
   }
@@ -955,7 +850,6 @@
       const data = await res.json();
       ALL_SETS = data.data || [];
 
-      // Populate advanced set dropdown grouped by series
       const grouped = {};
       ALL_SETS.forEach(set => {
         const s = set.series || 'Other';
