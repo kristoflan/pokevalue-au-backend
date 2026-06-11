@@ -316,58 +316,94 @@ app.get('/price', async (req, res) => {
 // ─── Japanese card search proxy ───────────────────────────────────────────────
 // Proxies TCGdex calls server-side to avoid browser CORS restrictions.
 // Tries multiple query formats since TCGdex's name filter syntax can be picky.
-app.get('/jp-search', async (req, res) => {
-  const { name } = req.query;
-  if (!name) return res.status(400).json({ error: 'name is required' });
-
-  const attempts = [
-    `https://api.tcgdex.net/v2/ja/cards?name=${encodeURIComponent(name)}`,
-    `https://api.tcgdex.net/v2/ja/cards?name=like:${encodeURIComponent(name)}`,
-    `https://api.tcgdex.net/v2/en/cards?name=${encodeURIComponent(name)}`, // fallback: get EN ids, then map
-  ];
-
-  let summaries = null;
-  let lastError = null;
-  let usedUrl = null;
-
-  for (const url of attempts.slice(0, 2)) { // only try JA endpoints for now
+// Helper: retry a request up to 3 times with short delays — TCGdex can be flaky
+async function fetchWithRetry(url, attempts = 3, delayMs = 600) {
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
     try {
-      console.log('Trying TCGdex JP search:', url);
       const r = await axios.get(url, {
         timeout: 15000,
         headers: { Accept: 'application/json' },
         validateStatus: s => s < 500,
       });
-      if (r.status === 200 && Array.isArray(r.data) && r.data.length) {
-        summaries = r.data;
-        usedUrl = url;
-        console.log(`Success with ${url} — ${summaries.length} results`);
-        break;
-      } else {
-        console.log(`Got status ${r.status}, ${Array.isArray(r.data) ? r.data.length : 'non-array'} results for ${url}`);
-      }
+      if (r.status === 200) return r;
+      lastErr = new Error(`Status ${r.status}`);
+      lastErr.response = r;
     } catch(e) {
-      lastError = e;
-      console.warn(`Failed ${url}:`, e.message, '| status:', e.response?.status, '| data:', JSON.stringify(e.response?.data || {}).slice(0, 300));
+      lastErr = e;
+    }
+    if (i < attempts - 1) await new Promise(res => setTimeout(res, delayMs));
+  }
+  throw lastErr;
+}
+
+app.get('/jp-search', async (req, res) => {
+  const { name } = req.query;
+  if (!name) return res.status(400).json({ error: 'name is required' });
+
+  let summaries = null;
+  let lastError = null;
+
+  // Try JA endpoint with retries
+  try {
+    const url = `https://api.tcgdex.net/v2/ja/cards?name=${encodeURIComponent(name)}`;
+    console.log('Trying TCGdex JP search:', url);
+    const r = await fetchWithRetry(url, 3, 700);
+    if (Array.isArray(r.data)) {
+      summaries = r.data;
+      console.log(`JA search success — ${summaries.length} results`);
+    }
+  } catch(e) {
+    lastError = e;
+    console.warn('JA search failed after retries:', e.message, '| status:', e.response?.status);
+  }
+
+  // Fallback: search EN endpoint to get card IDs/names, then fetch JA versions by ID
+  if (!summaries || !summaries.length) {
+    try {
+      const enUrl = `https://api.tcgdex.net/v2/en/cards?name=${encodeURIComponent(name)}`;
+      console.log('Falling back to EN search for JP mapping:', enUrl);
+      const enRes = await fetchWithRetry(enUrl, 2, 500);
+      const enCards = Array.isArray(enRes.data) ? enRes.data.slice(0, 12) : [];
+      console.log(`EN fallback found ${enCards.length} cards — fetching JA equivalents by ID`);
+
+      // Try fetching the JA version of each EN card by the same ID
+      const jaResults = await Promise.all(
+        enCards.map(async c => {
+          try {
+            const r = await axios.get(`https://api.tcgdex.net/v2/ja/cards/${c.id}`, {
+              timeout: 8000, headers: { Accept: 'application/json' },
+            });
+            return r.data;
+          } catch(e) { return null; }
+        })
+      );
+      summaries = jaResults.filter(Boolean);
+      console.log(`Found ${summaries.length} JA cards via EN ID mapping`);
+    } catch(e) {
+      console.warn('EN fallback also failed:', e.message);
     }
   }
 
   if (!summaries) {
     return res.status(500).json({
       error:  'Failed to fetch Japanese cards',
-      detail: lastError?.message || 'No results from any TCGdex query format',
+      detail: lastError?.message || 'No results from TCGdex',
       lastStatus: lastError?.response?.status || null,
     });
   }
 
   if (!summaries.length) return res.json([]);
 
+  // If summaries already have full details (from ID lookups), use directly.
+  // Otherwise fetch full details for search-result summaries.
   const details = await Promise.all(
     summaries.slice(0, 24).map(async card => {
+      // If already has variants/set (full detail object), return as-is
+      if (card.variants || card.set) return card;
       try {
         const r = await axios.get(`https://api.tcgdex.net/v2/ja/cards/${card.id}`, {
-          timeout: 10000,
-          headers: { Accept: 'application/json' },
+          timeout: 10000, headers: { Accept: 'application/json' },
         });
         return r.data;
       } catch(e) {
@@ -377,7 +413,7 @@ app.get('/jp-search', async (req, res) => {
   );
 
   const full = details.filter(Boolean);
-  console.log(`Returning ${full.length} JP card objects (via ${usedUrl})`);
+  console.log(`Returning ${full.length} JP card objects`);
   return res.json(full);
 });
 
