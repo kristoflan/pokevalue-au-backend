@@ -314,47 +314,71 @@ app.get('/price', async (req, res) => {
 });
 
 // ─── Japanese card search proxy ───────────────────────────────────────────────
-// Proxies TCGdex calls server-side to avoid browser CORS restrictions
+// Proxies TCGdex calls server-side to avoid browser CORS restrictions.
+// Tries multiple query formats since TCGdex's name filter syntax can be picky.
 app.get('/jp-search', async (req, res) => {
   const { name } = req.query;
   if (!name) return res.status(400).json({ error: 'name is required' });
 
-  try {
-    const searchUrl = `https://api.tcgdex.net/v2/ja/cards?name=${encodeURIComponent(name)}&pagination[itemsPerPage]=24`;
-    console.log('TCGdex JP search:', searchUrl);
+  const attempts = [
+    `https://api.tcgdex.net/v2/ja/cards?name=${encodeURIComponent(name)}`,
+    `https://api.tcgdex.net/v2/ja/cards?name=like:${encodeURIComponent(name)}`,
+    `https://api.tcgdex.net/v2/en/cards?name=${encodeURIComponent(name)}`, // fallback: get EN ids, then map
+  ];
 
-    const searchRes = await axios.get(searchUrl, {
-      timeout: 15000,
-      headers: { Accept: 'application/json' },
-    });
+  let summaries = null;
+  let lastError = null;
+  let usedUrl = null;
 
-    const summaries = Array.isArray(searchRes.data) ? searchRes.data : [];
-    console.log(`Found ${summaries.length} JP cards for "${name}"`);
-    if (!summaries.length) return res.json([]);
-
-    // Fetch full details for each card using JP card IDs
-    const details = await Promise.all(
-      summaries.slice(0, 24).map(async card => {
-        try {
-          const r = await axios.get(`https://api.tcgdex.net/v2/ja/cards/${card.id}`, {
-            timeout: 10000,
-            headers: { Accept: 'application/json' },
-          });
-          return r.data;
-        } catch(e) {
-          // Fall back to summary if full details fail
-          return { id: card.id, localId: card.localId, name: card.name, image: card.image || null };
-        }
-      })
-    );
-
-    const full = details.filter(Boolean);
-    console.log(`Returning ${full.length} JP card objects`);
-    return res.json(full);
-  } catch(err) {
-    console.error('JP search error:', err.message, err.response?.status);
-    return res.status(500).json({ error: 'Failed to fetch Japanese cards', detail: err.message });
+  for (const url of attempts.slice(0, 2)) { // only try JA endpoints for now
+    try {
+      console.log('Trying TCGdex JP search:', url);
+      const r = await axios.get(url, {
+        timeout: 15000,
+        headers: { Accept: 'application/json' },
+        validateStatus: s => s < 500,
+      });
+      if (r.status === 200 && Array.isArray(r.data) && r.data.length) {
+        summaries = r.data;
+        usedUrl = url;
+        console.log(`Success with ${url} — ${summaries.length} results`);
+        break;
+      } else {
+        console.log(`Got status ${r.status}, ${Array.isArray(r.data) ? r.data.length : 'non-array'} results for ${url}`);
+      }
+    } catch(e) {
+      lastError = e;
+      console.warn(`Failed ${url}:`, e.message, '| status:', e.response?.status, '| data:', JSON.stringify(e.response?.data || {}).slice(0, 300));
+    }
   }
+
+  if (!summaries) {
+    return res.status(500).json({
+      error:  'Failed to fetch Japanese cards',
+      detail: lastError?.message || 'No results from any TCGdex query format',
+      lastStatus: lastError?.response?.status || null,
+    });
+  }
+
+  if (!summaries.length) return res.json([]);
+
+  const details = await Promise.all(
+    summaries.slice(0, 24).map(async card => {
+      try {
+        const r = await axios.get(`https://api.tcgdex.net/v2/ja/cards/${card.id}`, {
+          timeout: 10000,
+          headers: { Accept: 'application/json' },
+        });
+        return r.data;
+      } catch(e) {
+        return { id: card.id, localId: card.localId, name: card.name, image: card.image || null };
+      }
+    })
+  );
+
+  const full = details.filter(Boolean);
+  console.log(`Returning ${full.length} JP card objects (via ${usedUrl})`);
+  return res.json(full);
 });
 
 app.listen(PORT, () => console.log(`PokéValue AU backend running on port ${PORT}`));
