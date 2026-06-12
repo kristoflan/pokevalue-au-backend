@@ -251,14 +251,14 @@
     let total   = null;
 
     // 1. Extract number/total format first (e.g. "4/102")
-    const slashMatch = working.match(/\\b(\\d{1,4})\\s*\\/\\s*(\\d{1,4})\\b/);
+    const slashMatch = working.match(/\b(\d{1,4})\s*\/\s*(\d{1,4})\b/);
     if (slashMatch) {
       number = slashMatch[1];
       total  = slashMatch[2];
       working = working.replace(slashMatch[0], '').trim();
     } else {
       // 2. Extract standalone number (e.g. "44" or "SVP044")
-      const numMatch = working.match(/\\b(\\d{1,4})\\b/);
+      const numMatch = working.match(/\b(\d{1,4})\b/);
       if (numMatch) {
         number = numMatch[1];
         working = working.replace(numMatch[0], '').trim();
@@ -284,7 +284,7 @@
         if (bestScore >= 4 && best) {
           detectedSet = best;
           matchedSetName = best.name;
-          for (const w of bestWords) namePart = namePart.replace(new RegExp('\\\\b' + w + '\\\\b', 'gi'), '');
+          for (const w of bestWords) namePart = namePart.replace(new RegExp('\\b' + w + '\\b', 'gi'), '');
           namePart = namePart.trim().replace(/\\s+/g, ' ');
         }
       }
