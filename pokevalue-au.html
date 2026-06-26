@@ -628,8 +628,13 @@
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
+  const PROMO_PREFIXES = ['svp', 'swshp', 'smp', 'xyp', 'bwp', 'np'];
+
   function isPromoCard(setName, cardNumber) {
-    return setName.toLowerCase().includes('promo') || setName.toLowerCase().includes('black star') || /[a-zA-Z]/.test(cardNumber);
+    const setLower = setName.toLowerCase();
+    const numLower = (cardNumber || '').toLowerCase();
+    return (setLower.includes('black star') ||
+            PROMO_PREFIXES.some(p => numLower.startsWith(p) || setLower.includes(p)));
   }
   function buildEbayNum(number, total) {
     if (!number) return '';

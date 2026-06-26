@@ -98,13 +98,20 @@ function isTitleRelevant(title, cardName, cardNumber, setTotal) {
     const numInt    = parseInt(cardNumber, 10);
     const totalInt  = parseInt(setTotal, 10);
     const hasTotal  = setTotal && !isNaN(totalInt);
-    const padded    = cardNumber.toString().padStart(3, '0');
+    const hasNumericNum = !isNaN(numInt);
+    const padded    = hasNumericNum ? String(numInt).padStart(3, '0') : cardNumber;
+
     const formats   = [
-      cardNumber, padded,
+      cardNumber,
+      padded !== cardNumber ? padded : null,
       hasTotal ? `${cardNumber}/${setTotal}` : null,
       hasTotal ? `${cardNumber} / ${setTotal}` : null,
-      `#${cardNumber}`, `#${padded}`,
+      // Alphanumeric cards like GG70 often listed as "GG70/GG70"
+      !hasNumericNum ? `${cardNumber}/${cardNumber}` : null,
+      `#${cardNumber}`,
+      hasNumericNum && padded !== cardNumber ? `#${padded}` : null,
       `no. ${cardNumber}`, `no.${cardNumber}`,
+      // Promo prefix formats
       `svp${cardNumber}`, `svp${padded}`,
       `swsh${padded}`, `sm${padded}`, `xy${padded}`,
     ].filter(Boolean);
@@ -114,15 +121,23 @@ function isTitleRelevant(title, cardName, cardNumber, setTotal) {
 }
 
 // ─── Query builder ────────────────────────────────────────────────────────────
+// Promo set ID prefixes — card numbers in these sets need "promo" in eBay search
+const PROMO_PREFIXES = ['svp', 'swshp', 'smp', 'xyp', 'bwp', 'np', 'dp'];
+
 function buildQuery(cardName, cardNumber, setTotal) {
   const num    = parseInt(cardNumber, 10);
   const total  = parseInt(setTotal, 10);
   const isSecret   = cardNumber && setTotal && !isNaN(num) && !isNaN(total) && num > total;
   const hasNum     = cardNumber && setTotal && !isNaN(num) && !isNaN(total) && num <= total;
-  const isPromo    = cardNumber && /[a-zA-Z]/.test(cardNumber);
   const isLargeSet = hasNum && total >= 200;
 
-  if (isSecret || isPromo || isLargeSet) {
+  // Only treat as promo if the number starts with a known promo prefix
+  // Cards like GG70, TG01, AR01 are gallery/special cards — not promos
+  const numLower = (cardNumber || '').toLowerCase();
+  const isPromo  = cardNumber && PROMO_PREFIXES.some(p => numLower.startsWith(p));
+
+  if (isSecret || isLargeSet || (cardNumber && /[a-zA-Z]/.test(cardNumber))) {
+    // Alphanumeric numbers — search by name + number only, no /total
     return { query: cardNumber ? `${cardName} ${cardNumber}` : cardName, isSecret, hasNum, isPromo };
   }
   if (hasNum) {
@@ -178,14 +193,15 @@ function calculatePrice(sales) {
 async function fetchActiveListings(cardName, cardNumber, setTotal, token, isPromoOverride = false, stampVariant = 'none', gradeFilter = null) {
   let { query, isSecret, hasNum, isPromo } = buildQuery(cardName, cardNumber, setTotal);
 
-  // Build query based on card type and stamp variant
+  // Build query based on card type
   if (gradeFilter) {
-    // Graded search — include grading company and grade number directly
     query = `${cardName} ${cardNumber} ${gradeFilter.company} ${gradeFilter.value}`.trim();
     console.log('Graded query:', query);
   } else if (isPromoOverride || isPromo) {
+    // Only add "promo" keyword for actual promo cards (SVP, SWSHP etc.)
+    // Gallery cards (GG, TG, AR) don't need it — sellers don't use "promo"
     if (stampVariant === 'pokemon_center') {
-      query = `${cardName} ${cardNumber} promo pokemon center stamp`;
+      query = `${cardName} ${cardNumber} pokemon center stamp`;
     } else {
       query = `${cardName} ${cardNumber} promo`;
     }
