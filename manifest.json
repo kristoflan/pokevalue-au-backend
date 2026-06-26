@@ -1,0 +1,26 @@
+{
+  "name": "PokéValue AU",
+  "short_name": "PokéValue",
+  "description": "Australian Pokémon card prices — search, compare, and value your collection",
+  "start_url": "/pokevalue-au.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f4f2",
+  "theme_color": "#CC0000",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["shopping", "finance", "utilities"],
+  "lang": "en-AU"
+}
