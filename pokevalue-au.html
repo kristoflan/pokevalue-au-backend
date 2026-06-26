@@ -245,10 +245,22 @@
   // "4/102 Base Set", "Charizard", "4/102", etc.
   const STOP_WORDS = new Set(['card','cards','pokemon','pokémon','holo','rare','ex','gx','vmax','vstar','shiny','full','art','alt','secret','trainer','energy','item','supporter','stadium','the','and','of','in','a','an','for','with','set','series']);
 
+  // Grading companies and their detection patterns
+  const GRADING_COMPANIES = ['PSA', 'BGS', 'CGC', 'SGC', 'ACE', 'TAG'];
+
   function parseQuery(raw) {
     let working = raw.trim();
     let number  = null;
     let total   = null;
+    let grade   = null; // { company: 'PSA', value: '10' }
+
+    // 0. Extract grading company + grade first (e.g. "PSA 10", "psa10", "TAG 9", "BGS 9.5")
+    const gradeRegex = new RegExp('\\b(' + GRADING_COMPANIES.join('|') + ')\\s*(\\d{1,2}(?:\\.\\d)?)\\b', 'i');
+    const gradeMatch = working.match(gradeRegex);
+    if (gradeMatch) {
+      grade = { company: gradeMatch[1].toUpperCase(), value: gradeMatch[2] };
+      working = working.replace(gradeMatch[0], '').trim();
+    }
 
     // 1. Extract number/total format first (e.g. "4/102")
     const slashMatch = working.match(/\b(\d{1,4})\s*\/\s*(\d{1,4})\b/);
@@ -271,7 +283,7 @@
     let namePart = working;
 
     if (ALL_SETS.length) {
-      const words = working.toLowerCase().split(/\\s+/).filter(w => w.length > 1 && !STOP_WORDS.has(w));
+      const words = working.toLowerCase().split(/\s+/).filter(w => w.length > 1 && !STOP_WORDS.has(w));
       if (words.length) {
         let best = null, bestScore = 0, bestWords = [];
         for (const set of ALL_SETS) {
@@ -285,14 +297,14 @@
           detectedSet = best;
           matchedSetName = best.name;
           for (const w of bestWords) namePart = namePart.replace(new RegExp('\\b' + w + '\\b', 'gi'), '');
-          namePart = namePart.trim().replace(/\\s+/g, ' ');
+          namePart = namePart.trim().replace(/\s+/g, ' ');
         }
       }
     }
 
     namePart = namePart.trim();
 
-    return { namePart, number, total, detectedSet, matchedSetName };
+    return { namePart, number, total, detectedSet, matchedSetName, grade };
   }
 
   // ── Search dispatcher ───────────────────────────────────────────────────────
@@ -306,7 +318,7 @@
 
   // ── Build and run TCG API queries ───────────────────────────────────────────
   async function runSearch(raw) {
-    const { namePart, number, total, detectedSet, matchedSetName } = parseQuery(raw);
+    const { namePart, number, total, detectedSet, matchedSetName, grade } = parseQuery(raw);
 
     // Build query parts
     const queries = [];
@@ -360,46 +372,99 @@
         seen.add(card.id); return true;
       });
 
-      // ── Relevance ranking ─────────────────────────────────────────────────
-      // Score each card based on how well it matches the search terms.
-      // Higher score = more relevant = shown first.
+      // ── Relevance ranking + popularity sorting ────────────────────────────
+      // Scoring priorities:
+      // 1. Name match quality (exact > starts with > contains)
+      // 2. Number/set match if provided
+      // 3. Rarity weight — higher rarity = more popular/valuable = shown first
+      // 4. Recency tiebreaker — newer sets shown before older
+
+      // Rarity weights — higher = more desirable to collectors
+      const RARITY_WEIGHT = {
+        'special illustration rare': 120,
+        'hyper rare': 110,
+        'ultra rare': 100,
+        'illustration rare': 90,
+        'double rare': 85,
+        'rare secret': 80,
+        'amazing rare': 75,
+        'rare ultra': 70,
+        'rare holo v': 65,
+        'rare holo vstar': 65,
+        'rare holo vmax': 65,
+        'rare holo ex': 65,
+        'rare holo gx': 60,
+        'rare rainbow': 60,
+        'rare holo': 50,
+        'rare shiny': 45,
+        'rare': 30,
+        'uncommon': 15,
+        'common': 10,
+        'promo': 5,
+      };
+
+      // Card type suffix weights — VSTARs/VMaxis/EXs are more popular than base forms
+      const TYPE_WEIGHT = {
+        'vstar': 50, 'vmax': 48, 'v': 40, 'gx': 35, 'ex': 30,
+        'mega': 28, 'break': 20, 'lv.x': 20, 'legend': 25,
+      };
+
       const lowerName = namePart.toLowerCase();
       cards.forEach(card => {
         let score = 0;
         const cardName = (card.name || '').toLowerCase();
+        const cardRarity = (card.rarity || '').toLowerCase();
 
-        // Exact name match scores highest
-        if (lowerName && cardName === lowerName) score += 100;
-        else if (lowerName && cardName.startsWith(lowerName)) score += 50;
-        else if (lowerName && cardName.includes(lowerName)) score += 20;
-
-        // Number match
-        if (number) {
-          const cardNum = (card.number || '').toLowerCase();
-          if (cardNum === number.toLowerCase() || cardNum === (padded || '').toLowerCase()) score += 40;
+        // Name match quality
+        if (lowerName) {
+          if (cardName === lowerName) score += 200;
+          else if (cardName.startsWith(lowerName + ' ')) score += 100;
+          else if (cardName.startsWith(lowerName)) score += 80;
+          else if (cardName.includes(lowerName)) score += 40;
         }
 
-        // Set match
-        if (detectedSet && card.set?.id === detectedSet.id) score += 30;
+        // Number match bonus
+        if (number) {
+          const cardNum = (card.number || '').toLowerCase();
+          if (cardNum === number.toLowerCase() || cardNum === (padded || '').toLowerCase()) score += 60;
+        }
 
-        // Prefer non-promo, standard cards slightly when ambiguous
-        if (card.rarity && !card.rarity.toLowerCase().includes('promo')) score += 2;
+        // Set match bonus
+        if (detectedSet && card.set?.id === detectedSet.id) score += 50;
 
-        // Newer sets slightly favoured as tiebreaker
+        // Rarity weight (popularity proxy)
+        for (const [rarity, weight] of Object.entries(RARITY_WEIGHT)) {
+          if (cardRarity.includes(rarity)) { score += weight; break; }
+        }
+
+        // Card type suffix weight (VSTAR > VMAX > V > GX > EX etc.)
+        for (const [suffix, weight] of Object.entries(TYPE_WEIGHT)) {
+          if (cardName.endsWith(' ' + suffix) || cardName.includes(' ' + suffix + ' ')) {
+            score += weight; break;
+          }
+        }
+
+        // Recency tiebreaker — newer sets shown first within same score tier
         const releaseTime = new Date(card.set?.releaseDate || 0).getTime();
-        score += releaseTime / 1e13; // tiny weight, just for tiebreaking
+        score += releaseTime / 1e12;
 
         card._relevanceScore = score;
       });
 
       cards.sort((a, b) => b._relevanceScore - a._relevanceScore);
 
-      // Synthesise stamp variants for promo cards
-      cards = synthesiseStampVariants(cards);
+      // Attach grade filter to every card so selectCard knows to search graded listings
+      if (grade) {
+        cards.forEach(c => { c._gradeFilter = grade; });
+      } else {
+        // Synthesise stamp variants for promo cards (not applicable to graded searches)
+        cards = synthesiseStampVariants(cards);
+      }
 
       const hints = [];
       if (matchedSetName) hints.push(`set: <span style="color:var(--red);font-weight:600">${matchedSetName}</span>`);
       if (number) hints.push(`#${number}${total ? '/' + total : ''}`);
+      if (grade) hints.push(`<span style="color:#7c3aed;font-weight:600">${grade.company} ${grade.value}</span>`);
       const hint = hints.length ? ` · ${hints.join(' · ')}` : '';
 
       renderResults(cards, hint);
@@ -463,6 +528,8 @@
     const stampBadge = isPC
       ? `<div class="card-stamp-badge">⭐ PC Stamp</div>`
       : isPlain ? `<div class="card-stamp-badge nostamp">No Stamp</div>` : '';
+    const gradeBadge = card._gradeFilter
+      ? `<div class="card-stamp-badge" style="background:#ede9fe;color:#5b21b6;border-color:#ddd6fe;">${card._gradeFilter.company} ${card._gradeFilter.value}</div>` : '';
 
     el.innerHTML = `
       <div class="card-img-wrap">
@@ -475,6 +542,7 @@
         <div class="card-num">#${num} · ${card.supertype || ''}</div>
         ${rarity ? `<div class="card-rarity">${rarity}</div>` : ''}
         ${stampBadge}
+        ${gradeBadge}
       </div>`;
     el.addEventListener('click', () => selectCard(card, el));
     return el;
@@ -493,7 +561,12 @@
 
     const stampLabelEl = document.getElementById('detailStampLabel');
     const sv = card._stampVariant || 'none';
-    if (sv === 'pokemon_center' || (sv === 'none' && isStampablePromo(card))) {
+    const gradeFilter = card._gradeFilter || null;
+
+    if (gradeFilter) {
+      stampLabelEl.style.cssText = 'display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;margin-top:6px;background:#ede9fe;color:#5b21b6;';
+      stampLabelEl.textContent = `${gradeFilter.company} ${gradeFilter.value} Graded`;
+    } else if (sv === 'pokemon_center' || (sv === 'none' && isStampablePromo(card))) {
       stampLabelEl.style.cssText = `display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;margin-top:6px;${sv === 'pokemon_center' ? 'background:#854d0e;color:#fef9c3;' : 'background:#f1f5f9;color:#475569;border:0.5px solid #cbd5e1;'}`;
       stampLabelEl.textContent = sv === 'pokemon_center' ? '⭐ Pokemon Center Stamp' : 'No Stamp (Regular)';
     } else {
@@ -505,6 +578,7 @@
     const isPromo = isPromoCard(card.set?.name || '', card.number || '');
     let ebayBase  = `${card.name} ${numPart}`.trim();
     if (sv === 'pokemon_center') ebayBase += ' pokemon center stamp';
+    if (gradeFilter) ebayBase += ` ${gradeFilter.company} ${gradeFilter.value}`;
     const q = encodeURIComponent(ebayBase);
     document.getElementById('ebayActiveBtn').href = `https://www.ebay.com.au/sch/i.html?_nkw=${q}&_sop=10&LH_PrefLoc=1`;
     document.getElementById('ebaySoldBtn').href   = `https://www.ebay.com.au/sch/i.html?_nkw=${q}&LH_Sold=1&LH_Complete=1&LH_ItemCondition=3&_sop=13&LH_PrefLoc=1`;
@@ -521,10 +595,12 @@
     showPricingLoader();
 
     try {
-      const res = await fetch(`${BACKEND}/price?name=${encodeURIComponent(card.name)}&number=${encodeURIComponent(card.number || '')}&total=${encodeURIComponent(card.set?.printedTotal || card.set?.total || '')}&isPromo=${isPromo}&stamp=${encodeURIComponent(sv)}`);
+      let priceUrl = `${BACKEND}/price?name=${encodeURIComponent(card.name)}&number=${encodeURIComponent(card.number || '')}&total=${encodeURIComponent(card.set?.printedTotal || card.set?.total || '')}&isPromo=${isPromo}&stamp=${encodeURIComponent(sv)}`;
+      if (gradeFilter) priceUrl += `&gradeCompany=${encodeURIComponent(gradeFilter.company)}&gradeValue=${encodeURIComponent(gradeFilter.value)}`;
+      const res = await fetch(priceUrl);
       if (!res.ok) throw new Error();
       const data = await res.json();
-      renderPricing(data, tcgp, card.rarity || '', card.set?.name || '');
+      renderPricing(data, tcgp, card.rarity || '', card.set?.name || '', gradeFilter);
     } catch {
       document.getElementById('pricingSection').innerHTML = `<div class="no-data">⚠️ Could not fetch eBay AU pricing. Check your connection.</div>`;
     }
@@ -579,9 +655,38 @@
   }
 
   // ── Render pricing ──────────────────────────────────────────────────────────
-  function renderPricing(data, tcgp, rarity, setName) {
+  function renderPricing(data, tcgp, rarity, setName, gradeFilter = null) {
     const section = document.getElementById('pricingSection');
     const active  = data.active || {};
+
+    // ── Graded card pricing ──────────────────────────────────────────────
+    if (gradeFilter) {
+      let html = `
+        <div class="section-header sh-active" style="background:#f3e8ff;color:#5b21b6;border-color:#ddd6fe;">
+          <i class="ti ti-award"></i>
+          <div><div>${gradeFilter.company} ${gradeFilter.value} · eBay AU</div><div class="sh-sub">Graded listings — what sellers are asking right now</div></div>
+        </div>`;
+
+      if (active.graded) {
+        html += priceBlock(active.graded);
+      } else {
+        html += `<div class="no-data">⚠️ No ${gradeFilter.company} ${gradeFilter.value} listings found for this card on eBay AU right now. Try a different grade or check the broader market.</div>`;
+      }
+
+      html += `
+        <div class="section-header sh-sold" style="margin-top:4px;">
+          <i class="ti ti-checklist"></i>
+          <div><div>Sold Listings · eBay AU</div><div class="sh-sub">See what buyers actually paid — tap below</div></div>
+        </div>
+        <div style="font-size:13px;color:var(--text-muted);background:var(--surface2);border-radius:var(--radius-md);padding:12px 14px;margin-bottom:12px;border:0.5px solid var(--border);line-height:1.6;">
+          Tap <strong>Sold listings</strong> below to view recent ${gradeFilter.company} ${gradeFilter.value} sales from Australian sellers on eBay AU.
+        </div>`;
+
+      section.innerHTML = html;
+      section._activeData = active;
+      return;
+    }
+
     const hasMint = !!active.mint;
     const hasNM   = !!active.nm;
 
@@ -686,8 +791,7 @@
         </div>`;
     });
     html += `</div>`;
-    if (tcgp.url) html += `<a href="${tcgp.url}" target="_blank" class="btn btn-blue" style="margin-bottom:8px;"><i class="ti ti-external-link"></i> View on TCGPlayer.com</a>`;
-    if (tcgp.updatedAt) html += `<div style="font-size:11px;color:var(--text-hint);margin-bottom:4px;">Updated ${tcgp.updatedAt}</div>`;
+    if (tcgp.updatedAt) html += `<div style="font-size:11px;color:var(--text-hint);margin-bottom:4px;">US market data · TCGPlayer · updated ${tcgp.updatedAt}</div>`;
     return html;
   }
 

@@ -175,11 +175,15 @@ function calculatePrice(sales) {
 }
 
 // ─── eBay Browse API — active listings ───────────────────────────────────────
-async function fetchActiveListings(cardName, cardNumber, setTotal, token, isPromoOverride = false, stampVariant = 'none') {
+async function fetchActiveListings(cardName, cardNumber, setTotal, token, isPromoOverride = false, stampVariant = 'none', gradeFilter = null) {
   let { query, isSecret, hasNum, isPromo } = buildQuery(cardName, cardNumber, setTotal);
 
   // Build query based on card type and stamp variant
-  if (isPromoOverride || isPromo) {
+  if (gradeFilter) {
+    // Graded search — include grading company and grade number directly
+    query = `${cardName} ${cardNumber} ${gradeFilter.company} ${gradeFilter.value}`.trim();
+    console.log('Graded query:', query);
+  } else if (isPromoOverride || isPromo) {
     if (stampVariant === 'pokemon_center') {
       query = `${cardName} ${cardNumber} promo pokemon center stamp`;
     } else {
@@ -216,11 +220,54 @@ async function fetchActiveListings(cardName, cardNumber, setTotal, token, isProm
 
   let items = await fetch50(query);
   if (items.length < 5 && hasNum) {
-    const broad = await fetch50(cardName);
-    const seen  = new Set(items.map(i => i.itemId));
-    broad.forEach(i => { if (!seen.has(i.itemId)) items.push(i); });
+    const broad = gradeFilter
+      ? `${cardName} ${gradeFilter.company} ${gradeFilter.value}`
+      : cardName;
+    const broadResults = await fetch50(broad);
+    const seen = new Set(items.map(i => i.itemId));
+    broadResults.forEach(i => { if (!seen.has(i.itemId)) items.push(i); });
   }
 
+  // ── Graded search path ─────────────────────────────────────────────────
+  if (gradeFilter) {
+    const graded = [];
+    const companyLower = gradeFilter.company.toLowerCase();
+    const gradeLower   = gradeFilter.value.toLowerCase();
+
+    items.forEach(item => {
+      const title = item.title || '';
+      const titleLower = title.toLowerCase();
+      const price = Math.round(parseFloat(item.price?.value || 0) * 100) / 100;
+      if (price < 0.50 || price > 10000 || isJunk(title)) return;
+      if (!isTitleRelevant(title, cardName.replace(' japanese', '').replace(' promo', ''), cardNumber, setTotal)) return;
+
+      // Must mention the grading company
+      if (!titleLower.includes(companyLower)) return;
+
+      // Must mention the specific grade — check common formats:
+      // "PSA 10", "PSA10", "PSA-10", "PSA 9.5"
+      const gradePatterns = [
+        `${companyLower} ${gradeLower}`,
+        `${companyLower}${gradeLower}`,
+        `${companyLower}-${gradeLower}`,
+        `${companyLower} grade ${gradeLower}`,
+        `${companyLower} gem mt ${gradeLower}`,
+        `${companyLower} gem mint ${gradeLower}`,
+      ];
+      if (!gradePatterns.some(p => titleLower.includes(p))) return;
+
+      graded.push({
+        title, price,
+        date: item.itemCreationDate || new Date().toISOString(),
+        url:  item.itemWebUrl,
+      });
+    });
+
+    console.log(`Graded — ${gradeFilter.company} ${gradeFilter.value}: ${graded.length} listings`);
+    return { graded: graded.slice(0, 10) };
+  }
+
+  // ── Raw card search path (existing logic) ────────────────────────────────
   const mint = [], nm = [], unknown = [];
 
   items.forEach(item => {
@@ -285,27 +332,34 @@ app.post('/ebay/account-deletion', (req, res) => res.json({ acknowledged: true }
 // GET /price?name=Charizard&number=4&total=102&isPromo=false&isJapanese=false&stamp=none
 app.get('/price', async (req, res) => {
   const { name, number, total } = req.query;
-  const isPromoParam = req.query.isPromo === 'true';
-  const isJapanese   = req.query.isJapanese === 'true';
-  const stampVariant = req.query.stamp || 'none';
+  const isPromoParam  = req.query.isPromo === 'true';
+  const stampVariant  = req.query.stamp || 'none';
+  const gradeCompany  = req.query.gradeCompany || null;
+  const gradeValue    = req.query.gradeValue    || null;
+  const gradeFilter   = gradeCompany && gradeValue ? { company: gradeCompany, value: gradeValue } : null;
   if (!name) return res.status(400).json({ error: 'name is required' });
 
   try {
     const token      = await getEbayToken();
-    // For Japanese cards, the name already has 'japanese' appended by the frontend
     const activeData = await fetchActiveListings(
-      name, number || '', total || '', token, isPromoParam, stampVariant
+      name, number || '', total || '', token, isPromoParam, stampVariant, gradeFilter
     );
 
+    // Build response — graded path returns { graded }, raw path returns { mint, nm }
+    const active = gradeFilter
+      ? { graded: fmt(calculatePrice(activeData.graded || [])) }
+      : {
+          mint: fmt(calculatePrice(activeData.mint || [])),
+          nm:   fmt(calculatePrice(activeData.nm   || [])),
+        };
+
     return res.json({
-      success:    true,
-      cardName:   name,
-      cardNumber: number && total ? `${number}/${total}` : '',
-      stamp:      stampVariant,
-      active: {
-        mint: fmt(calculatePrice(activeData.mint)),
-        nm:   fmt(calculatePrice(activeData.nm)),
-      },
+      success:     true,
+      cardName:    name,
+      cardNumber:  number && total ? `${number}/${total}` : '',
+      stamp:       stampVariant,
+      gradeFilter: gradeFilter,
+      active,
     });
   } catch (err) {
     console.error('Pricing error:', err?.message);
