@@ -293,7 +293,7 @@
           if (matched.length > 1) score += matched.length * 3;
           if (score > bestScore) { bestScore = score; best = set; bestWords = matched; }
         }
-        if (bestScore >= 4 && best) {
+        if (bestScore >= 6 && best && bestWords.length >= 2) {
           detectedSet = best;
           matchedSetName = best.name;
           for (const w of bestWords) namePart = namePart.replace(new RegExp('\\b' + w + '\\b', 'gi'), '');
@@ -324,10 +324,19 @@
     const queries = [];
     const padded  = number ? number.padStart(3, '0') : null;
 
+    // Key rule: only use detectedSet as a filter when the user provided ADDITIONAL
+    // context beyond the set name itself. If the entire query resolved to just a set
+    // name with no card name left (namePart is empty or same as set name), treat
+    // the input as a name search instead to avoid pulling all cards from that set.
+    const setNameLower = (matchedSetName || '').toLowerCase();
+    const rawLower     = raw.trim().toLowerCase();
+    const setIsWholeQuery = !namePart || namePart.toLowerCase() === rawLower;
+    const useSetFilter = detectedSet && !setIsWholeQuery;
+
     if (namePart && number) {
-      // Name + number — most specific, try exact and padded number formats
+      // Name + number — most specific
       let q = `name:"${namePart}*"`;
-      if (detectedSet) q += ` set.id:${detectedSet.id}`;
+      if (useSetFilter) q += ` set.id:${detectedSet.id}`;
       if (total) {
         queries.push(`${q} number:"${number}/${total}"`);
         queries.push(`${q} number:"${number}"`);
@@ -335,19 +344,25 @@
         queries.push(`${q} number:"${number}"`);
         if (padded && padded !== number) queries.push(`${q} number:"${padded}"`);
       }
-    } else if (namePart && detectedSet) {
-      // Name + set, no number
+    } else if (namePart && useSetFilter) {
+      // Name + set context (e.g. "Charizard Base Set")
       queries.push(`name:"${namePart}*" set.id:${detectedSet.id}`);
-    } else if (namePart && !number && !detectedSet) {
-      // Name only
+      // Also run name-only as fallback in case set filter is too narrow
       queries.push(`name:"${namePart}*"`);
+    } else if (namePart) {
+      // Name only — or name where the "set" was actually the Pokémon's name
+      queries.push(`name:"${namePart}*"`);
+      // Also try the full raw string in case set stripping was wrong
+      if (namePart.toLowerCase() !== rawLower && !number) {
+        queries.push(`name:"${raw.trim()}*"`);
+      }
     } else if (!namePart && number && detectedSet) {
       // Number + set, no name — search within the set by number
       if (total) queries.push(`set.id:${detectedSet.id} number:"${number}/${total}"`);
       queries.push(`set.id:${detectedSet.id} number:"${number}"`);
       if (padded && padded !== number) queries.push(`set.id:${detectedSet.id} number:"${padded}"`);
-    } else if (!namePart && number && !detectedSet) {
-      // Number only — too broad on its own, but try anyway
+    } else if (!namePart && number) {
+      // Number only
       queries.push(`number:"${number}"`);
       if (padded && padded !== number) queries.push(`number:"${padded}"`);
     } else if (!namePart && !number && detectedSet) {
